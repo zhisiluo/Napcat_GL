@@ -69,7 +69,7 @@ export class AccountManager extends plugin {
     await client.executeCommand('apt install -y screen xvfb 2>/dev/null || yum install -y screen xorg-x11-server-Xvfb 2>/dev/null || true', 60000)
     const ir = await client.executeCommand(
       'curl -fsSL https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1',
-      120000
+      300000
     )
 
     if (!(await client.isNapCatInstalled())) {

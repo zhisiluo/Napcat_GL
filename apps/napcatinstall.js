@@ -49,7 +49,7 @@ export class NapcatInstall extends plugin {
       e.reply('正在下载并执行安装脚本（约1-2分钟）...')
       const installResult = await client.executeCommand(
         `curl -fsSL ${INSTALL_URL} -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1`,
-        120000
+        300000
       )
       const verify = await client.executeCommand(
         `test -d "${client.napcatBasePath}/config" && echo "INSTALL_OK" || echo "INSTALL_FAIL"`
