@@ -91,7 +91,7 @@ export function validatePort(port) {
     return { valid: false, message: '端口号必须为整数' };
   }
 
-  if (portNum  1 || portNum  65535) {
+  if (portNum < 1 || portNum > 65535) {
     return { valid: false, message: '端口号必须在 1-65535 之间' };
   }
 
