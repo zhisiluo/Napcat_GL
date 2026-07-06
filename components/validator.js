@@ -157,12 +157,10 @@ export function validateBackupFile(name) {
     return { valid: false, message: '备份文件名不能为空' };
   }
 
-  // 路径分隔符（Unix / Windows）
   if (name.includes('/') || name.includes('\\')) {
     return { valid: false, message: '备份文件名不能包含路径分隔符' };
   }
 
-  // 命令注入 / shell 特殊字符
   const dangerous = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', "'", '"', '\n', '\r', '\t'];
   for (const ch of dangerous) {
     if (name.includes(ch)) {
@@ -170,7 +168,6 @@ export function validateBackupFile(name) {
     }
   }
 
-  // 格式校验
   if (!/^[\w.\-]+\.tar\.gz$/.test(name)) {
     return { valid: false, message: '备份文件名必须为 .tar.gz 格式，且只能包含字母、数字、下划线、点和连字符' };
   }

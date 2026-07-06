@@ -41,8 +41,6 @@ export class ServerAdmin extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // #ngl添加服务器 <名称> <host:port> <用户名> <密码>
   async addServer(e) {
     if (!e.isMaster) return true
     const tokens = e.msg.trim().split(/\s+/)
