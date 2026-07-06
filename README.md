@@ -37,7 +37,7 @@ cd plugins/Napcat_GL && npm install
 
 ## 命令一览
 
-所有命令均需 master 权限。**`<服务器名>` 均为必填**，防止误操作默认服务器。
+所有命令均需 master 权限。
 
 ### 服务器管理
 
