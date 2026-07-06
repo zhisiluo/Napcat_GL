@@ -1,14 +1,3 @@
-/**
- * Napcat_GL - NapCat Global Load-balanced Manager
- *
- * 职责: 入口文件, 加载所有 app 模块, 打印启动信息
- * 依赖: 所有 apps/*.js 模块
- *
- * @author  Claude Code
- * @version 1.0.0
- * @since   2026-07-05
- */
-
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

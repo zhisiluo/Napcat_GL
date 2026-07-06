@@ -1,9 +1,3 @@
-/**
- * Napcat_GL - 统一确认机制
- *
- * 用户通过 #ngl确认 触发，无需 catch-all 规则。
- */
-
 const TIMEOUT_MS = 120_000
 
 class ConfirmStore {

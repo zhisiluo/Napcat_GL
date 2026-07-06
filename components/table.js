@@ -1,13 +1,4 @@
 /**
- * Napcat_GL - 表格渲染工具
- *
- * 替换5处重复的等宽列表格代码
- *
- * @author  Claude Code
- * @version 1.0.0
- */
-
-/**
  * 渲染纯文本等宽表格
  *
  * @param {string[]} header  列标题数组

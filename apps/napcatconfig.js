@@ -1,12 +1,3 @@
-/**
- * Napcat_GL - 配置管理
- *
- * 简化说明:
- *   - 删除重复的 renderTable 代码，改用 components/table.js
- *   - 统一错误处理用 formatError
- *   - token 掩码修复（token < 8位时安全处理）
- */
-
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { parseCommand } from '../components/parser.js'

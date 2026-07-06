@@ -1,19 +1,6 @@
-/**
- * Napcat_GL - 配置文件管理
- *
- * 职责: 读写 config/servers.json, 格式迁移, 配置校验
- * 依赖: 无 (仅 Node.js 内置 fs/path/url)
- *
- * @author  Claude Code
- * @version 1.0.0
- * @since   2026-07-05
- */
-
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
-
-// ─── 路径解析 ───────────────────────────────────────────────────────────────
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,8 +16,6 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_CONFIG_PATH = path.resolve(PROJECT_ROOT, 'config', 'servers.json');
 const DEFAULT_TEMPLATE_PATH = path.resolve(PROJECT_ROOT, 'default_config', 'servers.json');
 
-// ─── 内部工具 ───────────────────────────────────────────────────────────────
-
 /**
  * 创建空的默认配置模板。
  * @returns {object}
@@ -42,8 +27,6 @@ function createEmptyConfig() {
     servers: {},
   };
 }
-
-// ─── 公开函数 ───────────────────────────────────────────────────────────────
 
 /**
  * 解析配置文件路径。
@@ -214,7 +197,6 @@ export function migrateConfig(raw) {
     data.servers = {};
   }
 
-  // ── v0 → v1 ──────────────────────────────────────────────────────────
   if (data._schemaVersion < 1) {
     const entries = Object.entries(data.servers);
 
@@ -234,7 +216,6 @@ export function migrateConfig(raw) {
     console.log(`[INFO] [ngl:config] 配置已从 v0 迁移至 v1 (${entries.length} 台服务器)`);
   }
 
-  // ── 未来版本迁移示例 ─────────────────────────────────────────────────
   // if (data._schemaVersion < 2) {
   //   // v1 → v2: ...
   //   data._schemaVersion = 2;

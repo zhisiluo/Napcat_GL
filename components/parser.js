@@ -1,14 +1,3 @@
-/**
- * Napcat_GL - 命令解析器
- *
- * 职责: 统一解析 #ngl 命令格式, 提取 action/server/params
- * 依赖: ./sshpool.js (仅用于获取有效服务器名列表)
- *
- * @author  Claude Code
- * @version 1.0.0
- * @since   2026-07-05
- */
-
 // QUERY_ACTIONS: actions that allow server="all"
 const QUERY_ACTIONS = new Set([
   '状态',

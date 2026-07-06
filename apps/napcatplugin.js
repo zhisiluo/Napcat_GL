@@ -1,9 +1,3 @@
-/**
- * Napcat_GL - 插件管理
- *
- * 简化说明: 统一错误处理用 formatError
- */
-
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { parseCommand } from '../components/parser.js'
@@ -22,7 +16,6 @@ export class NapcatPlugin extends plugin {
         { reg: '^#ngl插件信息\\s+(\\S+)\\s+(.+)$',       fnc: 'pluginInfo',    permission: 'master' },
         { reg: '^#ngl插件启用\\s+(\\S+)\\s+(.+)$',       fnc: 'enablePlugin',  permission: 'master' },
         { reg: '^#ngl插件禁用\\s+(\\S+)\\s+(.+)$',       fnc: 'disablePlugin', permission: 'master' },
-        // #ngl查看webui <服务器名> [key]  —— key 表示只显示 token
         { reg: '^#ngl查看webui\\s+(\\S+)(\\s+key)?$',     fnc: 'checkWebUI',    permission: 'master' },
       ]
     })
@@ -94,9 +87,6 @@ export class NapcatPlugin extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // #ngl查看webui <服务器名> [key]
-  // key 参数：只显示 Token，不显示其他信息
   async checkWebUI(e) {
     if (!e.isMaster) return true
 
@@ -110,27 +100,19 @@ export class NapcatPlugin extends plugin {
     try {
       const client = await pool.get(serverName)
       const info   = client.getConnectionInfo()
-
-      // 动态读取 WebUI 端口
       const wCfg = await client.readWebUIConfig()
       const port  = wCfg.success ? (wCfg.data?.port || 6099) : 6099
       const token = wCfg.success ? wCfg.data?.token : null
-
-      // 只要 key 时直接返回
       if (keyOnly) {
         e.reply(token ? `${serverName} WebUI Token:\n${token}` : `${serverName} WebUI Token 未配置`)
         return true
       }
-
-      // 检查端口是否监听
       const portSt = await client.getPortStatus(port)
 
       if (!portSt.listening) {
         e.reply(`${serverName} WebUI 未运行\n端口 ${port} 未监听`)
         return true
       }
-
-      // 账号列表 + 每个账号运行状态
       const accounts = await client.listNapCatAccounts()
       const accs = accounts.success ? (accounts.accounts || []) : []
       const accLines = []

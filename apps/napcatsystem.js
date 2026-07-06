@@ -1,10 +1,3 @@
-/**
- * Napcat_GL - 服务器系统信息命令
- *
- * 简化说明:
- *   - renderTable / formatError 替换重复代码
- */
-
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { parseCommand } from '../components/parser.js'
@@ -63,7 +56,7 @@ export class NapcatSystem extends plugin {
         client.isNapCatInstalled(),
       ])
       e.reply([
-        `服务器: ${parsed.server || pool._config?.defaultServer || '(默认)'}`,
+        `服务器: ${_m[1]}`,
         `安装: ${installed ? '是' : '否'}`,
         `版本: ${ver.success ? ver.version : '未知'}`,
         `路径: ${client.napcatBasePath}`,
@@ -98,7 +91,6 @@ export class NapcatSystem extends plugin {
     if (!_m) { e.reply('用法: #ngl端口 <服务器名>'); return true }
     try {
       const client = await pool.get(_m[1])
-      // 从配置文件动态读取端口，不使用硬编码值
       const accounts = await client.listNapCatAccounts()
       const accs = accounts.success ? (accounts.accounts || []) : []
 
@@ -106,7 +98,6 @@ export class NapcatSystem extends plugin {
       const webuiStatus = await client.getPortStatus(wp)
       const lines = [`WebUI (${wp}): ${webuiStatus.listening ? '监听中' : '未监听'}`]
 
-      // 每个账号读取自己的 OB11 端口
       for (const acc of accs) {
         const ports = await client.getOB11Ports(acc)
         if (ports.length) {
@@ -142,13 +133,9 @@ export class NapcatSystem extends plugin {
         lines.push(`  QQ ${acc}  ${running ? '运行中' : '已停止'}`)
       }
       if (!accs.length) lines.push('  无账号')
-
-      // WebUI 端口（动态读取）
       const wp = await client.getWebUIPort()
       const webuiSt = await client.getPortStatus(wp)
       lines.push(`WebUI (${wp}): ${webuiSt.listening ? '监听中' : '未监听'}`)
-
-      // 每个账号的 OB11 端口（动态读取）
       for (const acc of accs) {
         const ports = await client.getOB11Ports(acc)
         for (const p of ports) {

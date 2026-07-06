@@ -1,9 +1,3 @@
-/**
- * Napcat_GL - 扫码登录
- *
- * 简化说明: 统一错误处理用 formatError
- */
-
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { parseCommand } from '../components/parser.js'

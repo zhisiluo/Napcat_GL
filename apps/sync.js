@@ -1,12 +1,3 @@
-/**
- * Napcat_GL - 配置同步
- *
- * 简化说明:
- *   - 目标服务器上传改用 SFTP（uploadFile）
- *   - 删除手工 base64 上传逻辑（原实现在大文件时会超出 ARG_MAX）
- *   - formatError 统一错误处理
- */
-
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { formatError } from '../components/errors.js'
@@ -41,8 +32,6 @@ export class ConfigSync extends plugin {
       e.reply(`正在从 ${src} 同步配置到 ${dst}...`)
 
       const [srcClient, dstClient] = await Promise.all([pool.get(src), pool.get(dst)])
-
-      // 1. 在源服务器打包配置目录
       const tarName     = `napcat_sync_${Date.now()}.tar.gz`
       const srcTmpPath  = `/tmp/${tarName}`
       const tarResult   = await srcClient.executeCommand(
@@ -52,8 +41,6 @@ export class ConfigSync extends plugin {
         e.reply(`打包源配置失败: ${tarResult.stderr || tarResult.stdout}`)
         return true
       }
-
-      // 2. 下载到本地临时文件
       localPath = path.join(os.tmpdir(), tarName)
       const dl = await srcClient.downloadFile(srcTmpPath, localPath)
       if (!dl.success) {
@@ -61,8 +48,6 @@ export class ConfigSync extends plugin {
         await srcClient.deletePath(srcTmpPath)
         return true
       }
-
-      // 3. 用 SFTP 上传到目标服务器（替换原来的 base64 echo 方式）
       const dstTmpPath = `/tmp/${tarName}`
       const ul = await dstClient.uploadFile(localPath, dstTmpPath)
       if (!ul.success) {
@@ -71,8 +56,6 @@ export class ConfigSync extends plugin {
         await srcClient.deletePath(srcTmpPath)
         return true
       }
-
-      // 4. 在目标服务器备份当前配置 + 解包
       const restore = await dstClient.executeCommand(
         `cd "${dstClient.napcatConfigDir}/.." && cp -r config/ "config_backup_before_sync_$(date +%s)" 2>/dev/null; ` +
         `tar -xzf "${dstTmpPath}" 2>&1 && echo "RESTORE_OK" || echo "RESTORE_FAIL"`,

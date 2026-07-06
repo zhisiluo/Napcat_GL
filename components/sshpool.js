@@ -1,14 +1,3 @@
-/**
- * Napcat_GL - SSH 连接池与远程操作客户端
- *
- * 职责: 管理多台服务器的 SSH 连接, 提供统一的远程操作接口
- * 依赖: ssh2 (npm), config.js, validator.js
- *
- * @author  Claude Code
- * @version 1.0.0
- * @since   2026-07-05
- */
-
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,9 +13,7 @@ const DEFAULT_CMD_TIMEOUT = 30000    // 30s for normal commands
 const INSTALL_CMD_TIMEOUT = 120000   // 120s for install commands
 const stripAnsi = s => (s || '').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
 
-// ============================================================================
 // SSHClient class — one instance per server
-// ============================================================================
 
 class SSHClient {
   constructor(config) {
@@ -41,8 +28,6 @@ class SSHClient {
     this.napcatBasePath = config.napcatBasePath || '/opt/QQ/resources/app/app_launcher/napcat'
     this.napcatConfigDir = config.napcatConfigDir || `${this.napcatBasePath}/config`
   }
-
-  // ==================== 连接信息 ====================
 
   getConnectionInfo() {
     return {
@@ -64,8 +49,6 @@ class SSHClient {
     if (config.napcatConfigDir) this.napcatConfigDir = config.napcatConfigDir
     if (config.webuiPort != null) this.config.webuiPort = config.webuiPort
   }
-
-  // ==================== SSH 连接 ====================
 
   async connect() {
     if (this.isConnected) return true
@@ -111,8 +94,6 @@ class SSHClient {
 
   async disconnect() {
     if (!this.isConnected || !this.client) return true
-
-    // Close SFTP subsystem before ending the SSH connection
     if (this.sftp) {
       try { this.sftp.end() } catch { /* ignore */ }
       this.sftp = null
@@ -123,8 +104,6 @@ class SSHClient {
     this.webuiToken = null
     return true
   }
-
-  // ==================== 命令执行 ====================
 
   async executeCommand(command, timeoutMs) {
     if (!this.isConnected) {
@@ -174,8 +153,6 @@ class SSHClient {
     })
   }
 
-  // ==================== 日志流 ====================
-
   getLogStream(qq, callback, errorCallback, endCallback) {
     if (!this.isConnected) {
       this.connect().then(connected => {
@@ -213,8 +190,6 @@ class SSHClient {
     }
     return false
   }
-
-  // ==================== NapCat CLI 命令 ====================
 
   async napcatStatus(qq = '') {
     const command = qq ? `napcat status ${qq}` : 'napcat status'
@@ -270,8 +245,6 @@ class SSHClient {
     }
     return { success: false, running: false }
   }
-
-  // ==================== SFTP 文件传输 ====================
 
   async getSFTP() {
     if (!this.isConnected) {
@@ -349,8 +322,6 @@ class SSHClient {
     return this.downloadFile(remotePath, localSavePath)
   }
 
-  // ==================== 远程文件操作 ====================
-
   async readFile(remotePath) {
     const result = await this.executeCommand(`cat "${remotePath}" 2>/dev/null`)
     if (result.success && result.stdout) {
@@ -411,8 +382,6 @@ class SSHClient {
     return { success: result.success && result.stdout.includes('DELETE_OK'), message: result.stderr || result.stdout }
   }
 
-  // ==================== 系统信息 ====================
-
   async getSystemInfo() {
     const result = await this.executeCommand(
       `echo "CPU%:$(top -bn1 2>/dev/null | grep '%Cpu' | head -1 | awk '{print $2}')"` + ';' +
@@ -434,22 +403,17 @@ class SSHClient {
   }
 
   async getNapCatVersion() {
-    // 1. napcat.json 里有时包含插件版本
     let result = await this.executeCommand(
       `find ${this.napcatBasePath}/plugins -maxdepth 2 -name "package.json" 2>/dev/null ` +
       `| xargs grep -l '"napcat"' 2>/dev/null | head -1 ` +
       `| xargs grep -oE '"version"\\s*:\\s*"[^"]+"' 2>/dev/null | grep -oE '[0-9]+\\.[0-9]+[^"]*' | head -1`
     )
     if (result.success && result.stdout.trim()) return { success: true, version: result.stdout.trim() }
-
-    // 2. qqnt.json 包含宿主 QQ 版本（NapCat 基于此版本）
     result = await this.executeCommand(
       `cat ${this.napcatBasePath}/qqnt.json 2>/dev/null ` +
       `| grep -oE '"linuxVersion"\\s*:\\s*"[^"]+"' | grep -oE '[0-9][^"]+' | head -1`
     )
     if (result.success && result.stdout.trim()) return { success: true, version: `NapCat@QQ-${result.stdout.trim()}` }
-
-    // 3. 主 package.json（可能是占位符，但至少有值）
     result = await this.executeCommand(
       `cat ${this.napcatBasePath}/package.json 2>/dev/null ` +
       `| grep -oE '"version"\\s*:\\s*"[^"]+"' | grep -oE '[0-9][^"]+' | head -1`
@@ -483,8 +447,6 @@ class SSHClient {
     const stdout = result.stdout || ''
     return { success: true, listening: result.success && !stdout.includes('PORT_NOT_LISTENING'), detail: stdout.trim() }
   }
-
-  // ==================== NapCat 配置管理 ====================
 
   async _detectConfigDirs() {
     if (this._detectedDirs) return this._detectedDirs
@@ -613,8 +575,6 @@ class SSHClient {
     return { success: false, message: '无法列出配置目录' }
   }
 
-  // ==================== 动态端口读取 ====================
-
   /**
    * 从 webui.json 读取 WebUI 实际端口（不使用硬编码默认值）
    * @returns {Promise<number>}
@@ -652,8 +612,6 @@ class SSHClient {
       .filter(s => s.enable !== false && s.port)
       .map(s => s.port)
   }
-
-  // ==================== WebUI API ====================
 
   async getWebUIToken() {
     if (this.webuiToken) return this.webuiToken
@@ -706,8 +664,6 @@ class SSHClient {
     return result.listening
   }
 
-  // ==================== 备份与恢复 ====================
-
   async backupConfigDir(backupName = '') {
     const timestamp = backupName || new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').substring(0, 19)
     const backupFileName = `napcat_config_backup_${timestamp}.tar.gz`
@@ -745,8 +701,6 @@ class SSHClient {
     return { success: false, message: result.stderr || result.stdout || '恢复失败' }
   }
 
-  // ==================== 日志文件 ====================
-
   async viewLogFile(logPath, lines = 100) {
     if (!logPath) logPath = `${this.napcatBasePath}/logs/`
 
@@ -766,21 +720,14 @@ class SSHClient {
     return { success: true, listing: '没有找到日志文件' }
   }
 
-  // ==================== 路径探测 ====================
-
   async detectNapCatPath() {
-    // 1. 已配置的自定义路径
     if (this.napcatBasePath) {
       const ok = await this.executeCommand(`test -d "${this.napcatBasePath}" && echo "YES" || echo "NO"`)
       if (ok.stdout.trim() === 'YES') return this.napcatBasePath
     }
-
-    // 2. 官方标准路径
     const officialPath = '/opt/QQ/resources/app/app_launcher/napcat'
     const ok2 = await this.executeCommand(`test -d "${officialPath}" && echo "YES" || echo "NO"`)
     if (ok2.stdout.trim() === 'YES') return officialPath
-
-    // 3. 在常用目录里搜（maxdepth=9 覆盖自定义嵌套路径）
     const result = await this.executeCommand(
       `find /opt /home /root /etc /var -maxdepth 9 -name "napcat" -type d 2>/dev/null | grep -v node_modules | head -3`
     )
@@ -792,15 +739,10 @@ class SSHClient {
   }
 
   async detectProcessMode() {
-    // 1. Wrapper（最优先）：napcat CLI 能管理 start/stop
     let result = await this.executeCommand('command -v napcat >/dev/null 2>&1 && napcat help 2>&1 | grep -c "start\\|stop" || echo "0"')
     if (result.success && (parseInt(result.stdout.trim()) || 0) >= 2) return 'wrapper'
-
-    // 2. Docker：有 NapCat 容器运行（不能只看 .dockerenv，服务器本身可能就是容器）
     result = await this.executeCommand('docker ps 2>/dev/null | grep -i napcat | wc -l')
     if (result.success && (parseInt(result.stdout.trim()) || 0) > 0) return 'docker'
-
-    // 3. Screen + xvfb
     result = await this.executeCommand('command -v screen >/dev/null 2>&1 && command -v xvfb-run >/dev/null 2>&1 && echo "YES" || echo "NO"')
     if (result.success && result.stdout.trim() === 'YES') return 'screen'
 
@@ -808,9 +750,7 @@ class SSHClient {
   }
 }
 
-// ============================================================================
 // ConnectionPool class — multi-server connection manager
-// ============================================================================
 
 class ConnectionPool {
   constructor(configPath) {
@@ -824,8 +764,6 @@ class ConnectionPool {
       this._config = { _schemaVersion: 1, defaultServer: '', servers: {} }
     }
   }
-
-  // ==================== 获取连接 ====================
 
   async get(name) {
     // 'all' falls back to default server for non-aggregating commands
@@ -866,8 +804,6 @@ class ConnectionPool {
     this._clients.set(name, client)
     return client
   }
-
-  // ==================== 服务器管理 ====================
 
   async add(name, config) {
     // Validate name
@@ -1036,8 +972,6 @@ class ConnectionPool {
     return { success: true, message: `已修改 ${name} 的 ${key}` }
   }
 
-  // ==================== 查询 ====================
-
   async list() {
     const entries = Object.entries(this._config.servers)
     if (entries.length === 0) return []
@@ -1138,9 +1072,7 @@ class ConnectionPool {
   }
 }
 
-// ============================================================================
 // Singleton export
-// ============================================================================
 
 const pool = new ConnectionPool()
 export default pool

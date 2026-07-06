@@ -1,8 +1,4 @@
 /**
- * Napcat_GL - 统一错误格式化
- */
-
-/**
  * 将 Error / 普通对象格式化为统一的错误字符串。
  */
 export function formatError(err) {

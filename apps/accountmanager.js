@@ -1,11 +1,3 @@
-/**
- * Napcat_GL - 账号管理
- *
- * 命令:
- *   #ngl快速部署 [服务器名] <QQ>  — 一条命令完成 安装→配置→启动→发二维码
- *   #ngl创建账号 [服务器名] <QQ>  — 仅创建配置+启动（NapCat 已安装时使用）
- */
-
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { parseCommand } from '../components/parser.js'
@@ -29,10 +21,8 @@ export class AccountManager extends plugin {
     })
   }
 
-  // ─────────────────────────────────────────────────────────
   //  #ngl快速部署 [服务器名] <QQ>
   //  完整流程：检测安装 → 确保安装 → 创建配置 → 启动 → 发二维码
-  // ─────────────────────────────────────────────────────────
 
   async quickDeploy(e) {
     if (!e.isMaster) return true
@@ -46,20 +36,12 @@ export class AccountManager extends plugin {
     try {
       const client = await pool.get(parsed.server)
       const serverName = parsed.server || pool._config?.defaultServer
-
-      // 1. 确保 NapCat 已安装（未安装则自动安装）
       const installed = await this._ensureInstalled(e, client, serverName)
       if (!installed) return true
-
-      // 2. 创建账号配置 + 启动进程
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
-
-      // 3. 等待二维码（最多4秒，覆盖99%场景）
       e.reply('正在等待二维码...')
       await new Promise(r => setTimeout(r, 4000))
-
-      // 4. 发送二维码
       await this._sendQRCode(e, client, qq, serverName)
     } catch (err) {
       e.reply(`快速部署失败: ${formatError(err)}`)
@@ -67,10 +49,8 @@ export class AccountManager extends plugin {
     return true
   }
 
-  // ─────────────────────────────────────────────────────────
   //  #ngl创建账号 [服务器名] <QQ>
   //  简化版：只做配置+启动，不做安装
-  // ─────────────────────────────────────────────────────────
 
   async createAccount(e) {
     if (!e.isMaster) return true
@@ -98,9 +78,7 @@ export class AccountManager extends plugin {
     return true
   }
 
-  // ─────────────────────────────────────────────────────────
   //  内部工具方法（每个只做一件事）
-  // ─────────────────────────────────────────────────────────
 
   /**
    * 确保 NapCat 已安装；未安装则自动安装。
@@ -118,11 +96,7 @@ export class AccountManager extends plugin {
       e.reply(`不支持的系统: ${osName}（需要 Ubuntu 18+ / Debian 10+ / CentOS 9+）`)
       return false
     }
-
-    // 安装依赖
     await client.executeCommand('apt install -y screen xvfb 2>/dev/null || yum install -y screen xorg-x11-server-Xvfb 2>/dev/null || true', 60000)
-
-    // 运行安装脚本
     const ir = await client.executeCommand(
       'curl -fsSL https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1',
       120000
@@ -158,7 +132,6 @@ export class AccountManager extends plugin {
     const alreadyExists = accounts.success && (accounts.accounts || []).includes(qq)
 
     if (alreadyExists) {
-      // 账号已存在：停旧进程，复用配置，重新启动
       const running = await client.isNapCatRunning(qq)
       if (running.running) {
         e.reply(`QQ ${qq} 正在运行，停止旧进程（保留配置）...`)
@@ -175,9 +148,7 @@ export class AccountManager extends plugin {
       } else {
         e.reply(`QQ ${qq} 已配置（未运行），复用现有配置启动...`)
       }
-      // 直接走下面的启动逻辑，不重新创建配置
     } else {
-      // 新账号：创建配置文件
       const globalCfg  = await client.readNapCatGlobalConfig()
       const baseConfig = (globalCfg.success && globalCfg.data) ? globalCfg.data : {}
       const writeResult = await client.writeNapCatAccountConfig(qq, { ...baseConfig, fileLog: true, consoleLog: true })
@@ -185,14 +156,11 @@ export class AccountManager extends plugin {
         e.reply(`创建配置文件失败: ${writeResult.message}`)
         return false
       }
-      // 复制 OB11 模板（可选）
       try {
         const ob11 = await client.readOB11Config('')
         if (ob11.success) await client.writeOB11Config(qq, ob11.data)
       } catch { /* 可选，跳过 */ }
     }
-
-    // 启动进程
     const mode = await client.detectProcessMode()
     if (mode === 'wrapper') {
       const r = await client.napcatStart(qq)

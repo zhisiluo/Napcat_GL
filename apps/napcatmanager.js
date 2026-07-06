@@ -22,8 +22,6 @@ export class NapcatManager extends plugin {
     })
   }
 
-  // ==================== 状态查询 ====================
-
   async napcatStatus(e) {
     if (!e.isMaster) return true
     const parsed = parseCommand(e.msg, pool)
@@ -55,8 +53,6 @@ export class NapcatManager extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // ==================== 启停重启/日志 ====================
 
   async napcatAction(e) {
     if (!e.isMaster) return true
@@ -103,8 +99,6 @@ export class NapcatManager extends plugin {
     return { success: false, message: `未知操作: ${action}` }
   }
 
-  // ==================== 强制停止（带确认）====================
-
   async napcatKill(e) {
     if (!e.isMaster) return true
     const parsed = parseCommand(e.msg, pool)
@@ -122,8 +116,6 @@ export class NapcatManager extends plugin {
     return true
   }
 
-  // ==================== 更新 ====================
-
   async napcatUpdate(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl更新\s+(\S+)$/)
@@ -138,8 +130,6 @@ export class NapcatManager extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // ==================== 日志流 ====================
 
   async _handleLog(e, client, qq) {
     const TIMEOUT = 60000
@@ -167,9 +157,6 @@ export class NapcatManager extends plugin {
     }
     return true
   }
-
-
-  // ==================== 帮助 ====================
 
   _helpPages = {
     '服务器': ['服务器管理', '#ngl服务器列表', '#ngl添加服务器', '#ngl删除服务器', '#ngl切换', '#ngl测试', '#ngl修改服务器'],
