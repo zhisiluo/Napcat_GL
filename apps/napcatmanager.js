@@ -13,8 +13,8 @@ export class NapcatManager extends plugin {
       priority: 5000,
       rule: [
         { reg: '^#ngl状态$|^#ngl状态\\s+(\\S+)(\\s+(\\d+))?$', fnc: 'napcatStatus', permission: 'master' },
-        { reg: '^#ngl(启动|停止|重启|日志)\\s+(\\S+\\s+)?(\\d+)$', fnc: 'napcatAction', permission: 'master' },
-        { reg: '^#ngl强制停止\\s+(\\S+\\s+)?(\\d+)$', fnc: 'napcatKill', permission: 'master' },
+        { reg: '^#ngl(启动|停止|重启|日志)\\s+(\\S+)\\s+(\\d+)$', fnc: 'napcatAction', permission: 'master' },
+        { reg: '^#ngl强制停止\\s+(\\S+)\\s+(\\d+)$', fnc: 'napcatKill', permission: 'master' },
         { reg: '^#ngl更新\\s+(\\S+)$', fnc: 'napcatUpdate', permission: 'master' },
         { reg: '^#ngl帮助$|^#ngl帮助\\s+(.+)$', fnc: 'nglHelp', permission: 'master' },
         { reg: '^#ngl(服务器|服务|系统|配置|账号|插件|备份|其他)$', fnc: 'nglCategory', permission: 'master' },
@@ -55,24 +55,15 @@ export class NapcatManager extends plugin {
 
   async napcatAction(e) {
     if (!e.isMaster) return true
-    const actionMatch = e.msg.match(/^#ngl(启动|停止|重启|日志)/)
-    if (!actionMatch) { e.reply('用法: #ngl<启动|停止|重启|日志> [服务器名] <QQ>'); return true }
-    const action = actionMatch[1]
-    const parsed = parseCommand(e.msg, pool)
-
-    const qq = parsed.params[parsed.params.length - 1]
-    if (!qq || !/^\d{5,12}$/.test(qq)) {
-      e.reply(`用法: #ngl${action} [服务器名] <QQ>`)
-      return true
-    }
-
+    const m = e.msg.match(/^#ngl(启动|停止|重启|日志)\s+(\S+)\s+(\d+)$/)
+    if (!m) { e.reply('用法: #ngl<启动|停止|重启|日志> <服务器名> <QQ>'); return true }
+    const [, action, serverName, qq] = m
     try {
-      const client = await pool.get(parsed.server)
+      const client = await pool.get(serverName)
       if (action === '日志') return this._handleLog(e, client, qq)
-
       const mode = await client.detectProcessMode()
       const r = await this._doAction(client, action, mode, qq)
-      e.reply(r && r.success ? `QQ ${qq} ${action}: ${r.stdout || '完成'}` : parseNapcatError(r, qq, parsed.server || pool._config?.defaultServer))
+      e.reply(r && r.success ? `QQ ${qq} ${action}: ${r.stdout || '完成'}` : parseNapcatError(r, qq, serverName))
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
@@ -100,17 +91,17 @@ export class NapcatManager extends plugin {
 
   async napcatKill(e) {
     if (!e.isMaster) return true
-    const parsed = parseCommand(e.msg, pool)
-    const qq = parsed.params[parsed.params.length - 1]
-    if (!qq) { e.reply('用法: #ngl强制停止 [服务器名] <QQ>'); return true }
+    const m = e.msg.match(/^#ngl强制停止\s+(\S+)\s+(\d+)$/)
+    if (!m) { e.reply('用法: #ngl强制停止 <服务器名> <QQ>'); return true }
+    const [, serverName, qq] = m
     try {
-      const client = await pool.get(parsed.server)
+      const client = await pool.get(serverName)
       const mode = await client.detectProcessMode()
       let r
       if (mode === 'wrapper') r = await client.napcatKill(qq)
       else if (mode === 'docker') r = await client.executeCommand(`docker stop napcat_${qq} 2>&1`)
       else r = await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
-      e.reply(r.success ? `QQ ${qq} 已强制终止` : parseNapcatError(r, qq, parsed.server))
+      e.reply(r.success ? `QQ ${qq} 已强制终止` : parseNapcatError(r, qq, serverName))
     } catch (err) { e.reply(formatError(err)) }
     return true
   }

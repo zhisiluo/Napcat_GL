@@ -15,24 +15,19 @@ export class AccountManager extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl快速部署\\s+(\\S+\\s+)?(\\d+)$', fnc: 'quickDeploy',   permission: 'master' },
-        { reg: '^#ngl创建账号\\s+(\\S+\\s+)?(\\d+)$', fnc: 'createAccount', permission: 'master' },
+        { reg: '^#ngl快速部署\\s+(\\S+)\\s+(\\d+)$', fnc: 'quickDeploy',   permission: 'master' },
+        { reg: '^#ngl创建账号\\s+(\\S+)\\s+(\\d+)$', fnc: 'createAccount', permission: 'master' },
       ]
     })
   }
 
   async quickDeploy(e) {
     if (!e.isMaster) return true
-    const parsed = parseCommand(e.msg, pool)
-    const qq = parsed.params[parsed.params.length - 1]
-    if (!qq || !/^\d{5,12}$/.test(qq)) {
-      e.reply('用法: #ngl快速部署 [服务器名] <QQ>')
-      return true
-    }
-
+    const m = e.msg.match(/^#ngl快速部署\s+(\S+)\s+(\d+)$/)
+    if (!m) { e.reply('用法: #ngl快速部署 <服务器名> <QQ>'); return true }
+    const [, serverName, qq] = m
     try {
-      const client = await pool.get(parsed.server)
-      const serverName = parsed.server || pool._config?.defaultServer
+      const client = await pool.get(serverName)
       const installed = await this._ensureInstalled(e, client, serverName)
       if (!installed) return true
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
@@ -40,35 +35,23 @@ export class AccountManager extends plugin {
       e.reply('正在等待二维码...')
       await new Promise(r => setTimeout(r, 4000))
       await this._sendQRCode(e, client, qq, serverName)
-    } catch (err) {
-      e.reply(`快速部署失败: ${formatError(err)}`)
-    }
+    } catch (err) { e.reply(`快速部署失败: ${formatError(err)}`) }
     return true
   }
 
   async createAccount(e) {
     if (!e.isMaster) return true
-    const parsed = parseCommand(e.msg, pool)
-    const qq = parsed.params[parsed.params.length - 1]
-    if (!qq || !/^\d{5,12}$/.test(qq)) {
-      e.reply('用法: #ngl创建账号 [服务器名] <QQ>')
-      return true
-    }
-    if (parsed.error) { e.reply(parsed.error); return true }
-
+    const m = e.msg.match(/^#ngl创建账号\s+(\S+)\s+(\d+)$/)
+    if (!m) { e.reply('用法: #ngl创建账号 <服务器名> <QQ>'); return true }
+    const [, serverName, qq] = m
     try {
-      const client = await pool.get(parsed.server)
-      const serverName = parsed.server || pool._config?.defaultServer
-
+      const client = await pool.get(serverName)
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
-
       e.reply('正在等待二维码...')
       await new Promise(r => setTimeout(r, 4000))
       await this._sendQRCode(e, client, qq, serverName)
-    } catch (err) {
-      e.reply(`创建失败: ${formatError(err)}`)
-    }
+    } catch (err) { e.reply(`创建失败: ${formatError(err)}`) }
     return true
   }
 

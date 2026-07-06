@@ -16,7 +16,7 @@ export class ServerAdmin extends plugin {
         { reg: '^#ngl添加服务器\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S', fnc: 'addServer', permission: 'master' },
         { reg: '^#ngl删除服务器\\s+(\\S+)$', fnc: 'deleteServer', permission: 'master' },
         { reg: '^#ngl切换\\s+(\\S+)$', fnc: 'switchServer', permission: 'master' },
-        { reg: '^#ngl测试\\s*(\\S*)$', fnc: 'testServer', permission: 'master' },
+        { reg: '^#ngl测试\\s+(\\S+)$', fnc: 'testServer', permission: 'master' },
         { reg: '^#ngl修改服务器\\s+(\\S+)\\s+(\\S+)\\s+(.+)$', fnc: 'editServer', permission: 'master' },
       ]
     })
