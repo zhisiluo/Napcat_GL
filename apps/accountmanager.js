@@ -73,8 +73,18 @@ export class AccountManager extends plugin {
     )
 
     if (!(await client.isNapCatInstalled())) {
-      const tail = (ir.stdout || ir.stderr || '').split('\n').slice(-10).join('\n')
-      e.reply(`自动安装失败:\n${tail || '未知错误'}`)
+      const lines = (ir.stdout || ir.stderr || '').split('\n')
+        .filter(l => {
+          const t = l.trim()
+          if (!t) return false
+          if (/^\s*[\d.]+\s*%/.test(t)) return false
+          if (/^[O=#\s]+$/.test(t)) return false
+          if (/测速:/.test(t)) return false
+          return true
+        })
+        .slice(-8)
+        .join('\n')
+      e.reply(`自动安装失败:\n${lines || '未知错误'}`)
       return false
     }
     const detected = await client.detectNapCatPath()

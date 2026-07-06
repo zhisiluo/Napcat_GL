@@ -55,8 +55,18 @@ export class NapcatInstall extends plugin {
         `test -d "${client.napcatBasePath}/config" && echo "INSTALL_OK" || echo "INSTALL_FAIL"`
       )
       if (verify.stdout?.trim() !== 'INSTALL_OK') {
-        const tail = (installResult.stdout || installResult.stderr || '').split('\n').slice(-20).join('\n')
-        e.reply(`安装失败:\n${tail || '未知错误'}`)
+        const lines = (installResult.stdout || installResult.stderr || '').split('\n')
+          .filter(l => {
+            const t = l.trim()
+            if (!t) return false
+            if (/^\s*[\d.]+\s*%/.test(t)) return false
+            if (/^[O=#\s]+$/.test(t)) return false
+            if (/测速:/.test(t)) return false
+            return true
+          })
+          .slice(-8)
+          .join('\n')
+        e.reply(`安装失败:\n${lines || '未知错误'}`)
         return true
       }
       const detectedPath = await client.detectNapCatPath()
