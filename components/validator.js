@@ -1,9 +1,3 @@
-/**
- * 校验服务器名称
- *
- * @param {*} name - 待校验的服务器名称
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validateServerName(name) {
   if (name === null || name === undefined) {
     return { valid: false, message: '服务器名称不能为空' };
@@ -31,35 +25,19 @@ export function validateServerName(name) {
   return { valid: true };
 }
 
-/**
- * 校验 QQ 号
- *
- * 接受字符串或数字类型；转换为字符串后以 /^\d{5,12}$/ 校验。
- *
- * @param {*} qq - 待校验的 QQ 号
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validateQQ(qq) {
   if (qq === null || qq === undefined) {
     return { valid: false, message: 'QQ号不能为空' };
   }
-
-  // 仅接受字符串或数字类型
   if (typeof qq !== 'string' && typeof qq !== 'number') {
     return { valid: false, message: 'QQ号格式无效' };
   }
-
-  // 数字类型 → 转换为字符串
   if (typeof qq === 'number') {
     if (!Number.isInteger(qq) || qq <= 0) {
       return { valid: false, message: 'QQ号必须为正整数' };
     }
-
-    // Number.toString() 对于大数可能转为科学计数法，但 QQ 号上限 12 位，安全
     qq = qq.toString();
   }
-
-  // 空字符串
   if (qq === '') {
     return { valid: false, message: 'QQ号不能为空' };
   }
@@ -77,14 +55,6 @@ export function validateQQ(qq) {
   return { valid: true };
 }
 
-/**
- * 校验主机地址 (host)
- *
- * 仅验证非空及长度，不验证 IP/DNS 格式。
- *
- * @param {*} host - 待校验的主机地址
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validateHost(host) {
   if (host === null || host === undefined) {
     return { valid: false, message: '主机地址不能为空' };
@@ -105,14 +75,6 @@ export function validateHost(host) {
   return { valid: true };
 }
 
-/**
- * 校验端口号
- *
- * 接受字符串或数字类型；必须为 1-65535 之间的整数。
- *
- * @param {*} port - 待校验的端口号
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validatePort(port) {
   if (port === null || port === undefined) {
     return { valid: false, message: '端口号不能为空' };
@@ -136,14 +98,6 @@ export function validatePort(port) {
   return { valid: true };
 }
 
-/**
- * 校验备份文件名
- *
- * 格式: [\w.\-]+.tar.gz；额外检查路径分隔符与命令注入字符。
- *
- * @param {*} name - 待校验的备份文件名
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validateBackupFile(name) {
   if (name === null || name === undefined) {
     return { valid: false, message: '备份文件名不能为空' };
@@ -175,14 +129,6 @@ export function validateBackupFile(name) {
   return { valid: true };
 }
 
-/**
- * 校验配置键名 (config key)
- *
- * 格式: 字母开头，后可跟字母、数字、下划线、点。
- *
- * @param {*} key - 待校验的配置键名
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validateConfigKey(key) {
   if (key === null || key === undefined) {
     return { valid: false, message: '配置键名不能为空' };
@@ -203,19 +149,6 @@ export function validateConfigKey(key) {
   return { valid: true };
 }
 
-/**
- * 聚合校验服务器配置对象
- *
- * 检查项:
- *   - host / username 必填且非空
- *   - password / privateKey 至少提供一个
- *   - port（可选）1-65535
- *   - deployMode（可选）枚举值
- *   - maxInstances（可选）正整数
- *
- * @param {*} config - 服务器配置对象
- * @returns {{ valid: boolean, message?: string }}
- */
 export function validateServerConfig(config) {
   if (config === null || config === undefined) {
     return { valid: false, message: '服务器配置不能为空' };
@@ -224,39 +157,29 @@ export function validateServerConfig(config) {
   if (typeof config !== 'object' || Array.isArray(config)) {
     return { valid: false, message: '服务器配置必须为对象' };
   }
-
-  // host —— 必填且非空
   if (!('host' in config) || config.host === null || config.host === undefined) {
     return { valid: false, message: '主机地址 (host) 为必填项' };
   }
   if (typeof config.host !== 'string' || config.host.trim() === '') {
     return { valid: false, message: '主机地址 (host) 不能为空' };
   }
-
-  // username —— 必填且非空
   if (!('username' in config) || config.username === null || config.username === undefined) {
     return { valid: false, message: '用户名 (username) 为必填项' };
   }
   if (typeof config.username !== 'string' || config.username.trim() === '') {
     return { valid: false, message: '用户名 (username) 不能为空' };
   }
-
-  // password / privateKey —— 至少提供一个
   const hasPassword = typeof config.password === 'string' && config.password.trim() !== '';
   const hasPrivateKey = typeof config.privateKey === 'string' && config.privateKey.trim() !== '';
   if (!hasPassword && !hasPrivateKey) {
     return { valid: false, message: '密码 (password) 和密钥 (privateKey) 必须至少提供一个' };
   }
-
-  // port（可选）—— 如提供则必须 1-65535
   if ('port' in config && config.port !== null && config.port !== undefined) {
     const portResult = validatePort(config.port);
     if (!portResult.valid) {
       return { valid: false, message: `端口号无效: ${portResult.message}` };
     }
   }
-
-  // deployMode（可选）—— 枚举值
   if ('deployMode' in config && config.deployMode !== null && config.deployMode !== undefined) {
     const validModes = ['wrapper', 'screen', 'docker', 'auto'];
     if (!validModes.includes(config.deployMode)) {
@@ -266,8 +189,6 @@ export function validateServerConfig(config) {
       };
     }
   }
-
-  // maxInstances（可选）—— 正整数
   if ('maxInstances' in config && config.maxInstances !== null && config.maxInstances !== undefined) {
     const val = config.maxInstances;
     const num = typeof val === 'string' ? parseInt(val, 10) : val;

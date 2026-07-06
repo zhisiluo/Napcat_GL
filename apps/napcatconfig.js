@@ -27,9 +27,7 @@ export class NapcatConfig extends plugin {
     })
   }
 
-  /**
-   * 设置嵌套对象属性（支持 a.b.c 路径，自动类型转换）
-   */
+  
   setNested(obj, keyPath, value) {
     const keys = keyPath.split('.')
     let cur = obj
@@ -180,8 +178,6 @@ export class NapcatConfig extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // 修改 OneBot11 网络配置
   async editOB11Config(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改OB11\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)

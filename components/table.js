@@ -1,13 +1,3 @@
-/**
- * 渲染纯文本等宽表格
- *
- * @param {string[]} header  列标题数组
- * @param {Array<string[]>} rows  每行数据（每项与 header 等长的字符串数组）
- * @returns {string}  可直接 reply 的多行字符串
- *
- * @example
- * renderTable(['名称', '状态'], [['server1', '在线'], ['server2', '离线']])
- */
 export function renderTable(header, rows) {
   const allRows = [header, ...rows]
   const widths = header.map((_, i) =>

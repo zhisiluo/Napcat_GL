@@ -68,14 +68,10 @@ export class ConfigSync extends plugin {
         await dstClient.deletePath(dstTmpPath)
         return true
       }
-
-      // 5. 尝试重启目标 NapCat（wrapper 模式）
       try {
         const mode = await dstClient.detectProcessMode()
         if (mode === 'wrapper') await dstClient.executeCommand('napcat restart 2>&1 || true', 30000)
-      } catch { /* best-effort */ }
-
-      // 清理临时文件
+      } catch {  }
       fs.unlinkSync(localPath)
       await srcClient.deletePath(srcTmpPath)
       await dstClient.deletePath(dstTmpPath)

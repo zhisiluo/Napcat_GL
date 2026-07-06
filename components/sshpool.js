@@ -9,11 +9,9 @@ import { validateServerName, validateHost, validatePort } from './validator.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const NO_COLOR = 'TERM=dumb NO_COLOR=1 '
-const DEFAULT_CMD_TIMEOUT = 30000    // 30s for normal commands
-const INSTALL_CMD_TIMEOUT = 120000   // 120s for install commands
+const DEFAULT_CMD_TIMEOUT = 30000  
+const INSTALL_CMD_TIMEOUT = 120000 
 const stripAnsi = s => (s || '').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
-
-// SSHClient class — one instance per server
 
 class SSHClient {
   constructor(config) {
@@ -95,7 +93,7 @@ class SSHClient {
   async disconnect() {
     if (!this.isConnected || !this.client) return true
     if (this.sftp) {
-      try { this.sftp.end() } catch { /* ignore */ }
+      try { this.sftp.end() } catch {  }
       this.sftp = null
     }
 
@@ -224,8 +222,6 @@ class SSHClient {
   }
 
   async isNapCatInstalled() {
-    // 优先检测 napcat CLI wrapper（最可靠）
-    // 再检测 napcatBasePath（自定义路径）及标准路径
     const check = await this.executeCommand(
       'command -v napcat >/dev/null 2>&1' +
       ` || test -d "${this.napcatBasePath}" 2>/dev/null` +
@@ -233,7 +229,6 @@ class SSHClient {
       ' || test -f /opt/QQ/qq 2>/dev/null' +
       '; echo $?'
     )
-    // exit code 0 = found
     return check.success && check.stdout.trim() === '0'
   }
 
@@ -485,8 +480,6 @@ class SSHClient {
       const dir = svc.stdout.trim()
       this._detectedDirs.push(dir, `${dir}/config`)
     }
-
-    // Only search known install roots, never scan all of /
     const found = await this.executeCommand(
       `find /opt /home /root /etc /var -maxdepth 6 \\( -name "webui.json" -o -name "napcat.json" \\) 2>/dev/null | head -5`
     )
@@ -575,21 +568,14 @@ class SSHClient {
     return { success: false, message: '无法列出配置目录' }
   }
 
-  /**
-   * 从 webui.json 读取 WebUI 实际端口（不使用硬编码默认值）
-   * @returns {Promise<number>}
-   */
+  
   async getWebUIPort() {
     const r = await this.readWebUIConfig()
     if (r.success && r.data?.port) return r.data.port
     return this.config.webuiPort || 6099
   }
 
-  /**
-   * 从指定 QQ 的 onebot11 配置读取 HTTP 端口列表（支持多端口）
-   * @param {string} uin
-   * @returns {Promise<number[]>}
-   */
+  
   async getOB11Ports(uin) {
     const r = await this.readOB11Config(uin)
     if (!r.success || !r.data) return []
@@ -599,11 +585,7 @@ class SSHClient {
       .map(s => s.port)
   }
 
-  /**
-   * 从指定 QQ 的 onebot11 配置读取 WS 端口列表
-   * @param {string} uin
-   * @returns {Promise<number[]>}
-   */
+  
   async getOB11WSPorts(uin) {
     const r = await this.readOB11Config(uin)
     if (!r.success || !r.data) return []
@@ -750,8 +732,6 @@ class SSHClient {
   }
 }
 
-// ConnectionPool class — multi-server connection manager
-
 class ConnectionPool {
   constructor(configPath) {
     this._configPath = configPath || path.resolve(__dirname, '../config/servers.json')
@@ -766,7 +746,6 @@ class ConnectionPool {
   }
 
   async get(name) {
-    // 'all' falls back to default server for non-aggregating commands
     if (name === 'all') name = undefined
     if (!name) {
       name = this._config.defaultServer
@@ -806,18 +785,13 @@ class ConnectionPool {
   }
 
   async add(name, config) {
-    // Validate name
     const nameCheck = validateServerName(name)
     if (!nameCheck.valid) {
       return { success: false, code: 'INV_SRVNAME', message: nameCheck.message }
     }
-
-    // Check duplicate
     if (this._config.servers[name]) {
       return { success: false, code: 'SRV_DUPNAME', message: `服务器 ${name} 已存在` }
     }
-
-    // Validate required fields
     if (!config.host) {
       return { success: false, code: 'INV_PARAM', message: 'host 不能为空' }
     }
@@ -835,8 +809,6 @@ class ConnectionPool {
     if (!portCheck.valid) {
       return { success: false, code: 'INV_PARAM', message: `port 无效: ${portCheck.message}` }
     }
-
-    // Set defaults
     const serverConfig = {
       host: config.host,
       port: config.port || 22,
@@ -856,22 +828,16 @@ class ConnectionPool {
       keepaliveInterval: config.keepaliveInterval || 60000,
       disabled: false
     }
-
-    // Test SSH connection
     const testClient = new SSHClient(serverConfig)
     const connected = await testClient.connect()
     if (!connected) {
       return { success: false, code: 'SRV_OFFLINE', message: `连接 ${name} 失败: 无法建立 SSH 连接` }
     }
-
-    // Auto-detect napcatBasePath
     const detectedPath = await testClient.detectNapCatPath()
     if (detectedPath) {
       serverConfig.napcatBasePath = detectedPath
       serverConfig.napcatConfigDir = `${detectedPath}/config`
     }
-
-    // Save to config
     this._config.servers[name] = serverConfig
     if (!this._config.defaultServer) {
       this._config.defaultServer = name
@@ -880,14 +846,11 @@ class ConnectionPool {
     try {
       saveConfig(this._config, this._configPath)
     } catch (err) {
-      // Clean up in-memory config on save failure
       delete this._config.servers[name]
       if (this._config.defaultServer === name) this._config.defaultServer = ''
       await testClient.disconnect()
       return { success: false, code: 'CFG_WRITERR', message: `保存配置失败: ${err.message}` }
     }
-
-    // Disconnect test client
     await testClient.disconnect()
 
     return { success: true, message: `服务器 ${name} 已添加` }
@@ -897,15 +860,11 @@ class ConnectionPool {
     if (!this._config.servers[name]) {
       return { success: false, code: 'SRV_NOTFOUND', message: `服务器 ${name} 不存在` }
     }
-
-    // Disconnect if connected
     const client = this._clients.get(name)
     if (client) {
       await client.disconnect()
       this._clients.delete(name)
     }
-
-    // Remove from config — backup first so we can rollback on save failure
     const backupServer = this._config.servers[name]
     const backupDefault = this._config.defaultServer
     delete this._config.servers[name]
@@ -914,7 +873,6 @@ class ConnectionPool {
     try {
       saveConfig(this._config, this._configPath)
     } catch (err) {
-      // Rollback in-memory state
       this._config.servers[name] = backupServer
       this._config.defaultServer = backupDefault
       return { success: false, code: 'CFG_WRITERR', message: `保存配置失败: ${err.message}` }
@@ -951,8 +909,6 @@ class ConnectionPool {
     if (key === 'name') {
       return { success: false, code: 'INV_PARAM', message: '服务器名称不可修改' }
     }
-
-    // Type coercion for numeric fields
     const numericKeys = ['port', 'webuiPort', 'ob11HttpPort', 'ob11WsPort', 'connectTimeout', 'keepaliveInterval', 'maxInstances']
     if (numericKeys.includes(key)) {
       value = parseInt(value)
@@ -986,7 +942,6 @@ class ConnectionPool {
         }
 
         let client = this._clients.get(name)
-        // If not cached, try a quick connect to get real-time status
         if (!client || !client.isConnected) {
           if (serverConfig.disabled) {
             status.error = 'disabled'
@@ -1003,7 +958,6 @@ class ConnectionPool {
               return status
             }
             client = tempClient
-            // Cache for future use
             this._clients.set(name, tempClient)
           } catch (e) {
             status.error = e.message
@@ -1071,8 +1025,6 @@ class ConnectionPool {
     this._clients.clear()
   }
 }
-
-// Singleton export
 
 const pool = new ConnectionPool()
 export default pool

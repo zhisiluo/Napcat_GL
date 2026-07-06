@@ -89,8 +89,6 @@ export class NapcatPlugin extends plugin {
   }
   async checkWebUI(e) {
     if (!e.isMaster) return true
-
-    // 服务器名必须明确指定
     const match = e.msg.match(/^#ngl查看webui\s+(\S+)(\s+key)?$/)
     if (!match) { e.reply('用法: #ngl查看webui <服务器名> [key]'); return true }
 

@@ -112,8 +112,6 @@ export class NapcatSystem extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // 综合服务状态：账号运行情况 + 端口
   async serviceStatus(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl服务状态\s+(\S+)$/)
@@ -147,8 +145,6 @@ export class NapcatSystem extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
-
-  // 列出日志文件
   async listLogFiles(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl日志文件\s+(\S+)$/)

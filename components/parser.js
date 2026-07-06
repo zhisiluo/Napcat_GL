@@ -1,4 +1,3 @@
-// QUERY_ACTIONS: actions that allow server="all"
 const QUERY_ACTIONS = new Set([
   '状态',
   '概览',
@@ -21,11 +20,6 @@ const QUERY_ACTIONS = new Set([
   '测试',
 ]);
 
-/**
- * Get list of valid server names from the pool's config
- * @param {object} pool - ConnectionPool instance
- * @returns {string[]}
- */
 function getServerNames(pool) {
   try {
     return Object.keys(pool._config?.servers || {});
@@ -34,29 +28,17 @@ function getServerNames(pool) {
   }
 }
 
-/**
- * Parse a #ngl command message
- *
- * @param {string} msg - The raw message from e.msg
- * @param {object} pool - ConnectionPool instance (to check valid server names)
- * @returns {{ action: string, server?: string, params: string[], error?: string }}
- */
 export function parseCommand(msg, pool) {
-  // Default return structure
   const result = {
     action: '',
     server: undefined,
     params: [],
     error: undefined,
   };
-
-  // Defensive: handle null/undefined/non-string msg
   if (!msg || typeof msg !== 'string') {
     result.error = '不是有效的 #ngl 命令';
     return result;
   }
-
-  // Step 1: Extract #ngl prefix (case-insensitive)
   const trimmed = msg.trim();
   const nglRegex = /^#ngl\s*/i;
   if (!nglRegex.test(trimmed)) {
@@ -65,23 +47,15 @@ export function parseCommand(msg, pool) {
   }
 
   const rest = trimmed.replace(nglRegex, '');
-
-  // Step 2: Split remaining string by whitespace, filter empty strings
   const tokens = rest.split(/\s+/).filter(t => t.length > 0);
-
-  // Step 3: Action is tokens[0]
   if (tokens.length === 0) {
     result.error = '不是有效的 #ngl 命令';
     return result;
   }
 
   result.action = tokens[0];
-
-  // Step 4: Server detection (tokens[1])
   if (tokens.length >= 2) {
     const second = tokens[1];
-
-    // Check for "all"
     if (second === 'all') {
       if (QUERY_ACTIONS.has(result.action)) {
         result.server = 'all';
@@ -93,32 +67,21 @@ export function parseCommand(msg, pool) {
       }
       return result;
     }
-
-    // Get valid server names from pool
     const serverNames = getServerNames(pool);
-
-    // Check if second token matches a valid server name
     if (serverNames.includes(second)) {
       result.server = second;
       result.params = tokens.slice(2);
       return result;
     }
-
-    // Check if second token is QQ-like (purely numeric, 5-12 digits)
     if (/^\d{5,12}$/.test(second)) {
       result.server = undefined;
       result.params = tokens.slice(1);
       return result;
     }
-
-    // Otherwise, second token is neither a server name nor a QQ number,
-    // so treat it as a parameter (server stays undefined)
     result.server = undefined;
     result.params = tokens.slice(1);
     return result;
   }
-
-  // No second token — just action, no params
   result.params = [];
   return result;
 }

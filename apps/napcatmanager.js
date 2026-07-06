@@ -28,7 +28,6 @@ export class NapcatManager extends plugin {
 
     try {
       if (!parsed.server) {
-        // 无 server → 聚合全部服务器
         const servers = await pool.list()
         if (!servers.length) { e.reply('暂无服务器'); return true }
         const rows = servers.map(s => [

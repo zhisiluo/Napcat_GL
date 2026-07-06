@@ -21,9 +21,6 @@ export class AccountManager extends plugin {
     })
   }
 
-  //  #ngl快速部署 [服务器名] <QQ>
-  //  完整流程：检测安装 → 确保安装 → 创建配置 → 启动 → 发二维码
-
   async quickDeploy(e) {
     if (!e.isMaster) return true
     const parsed = parseCommand(e.msg, pool)
@@ -48,9 +45,6 @@ export class AccountManager extends plugin {
     }
     return true
   }
-
-  //  #ngl创建账号 [服务器名] <QQ>
-  //  简化版：只做配置+启动，不做安装
 
   async createAccount(e) {
     if (!e.isMaster) return true
@@ -78,18 +72,11 @@ export class AccountManager extends plugin {
     return true
   }
 
-  //  内部工具方法（每个只做一件事）
-
-  /**
-   * 确保 NapCat 已安装；未安装则自动安装。
-   * @returns {boolean} 安装成功返回 true，失败返回 false（已回复错误给用户）
-   */
+  
   async _ensureInstalled(e, client, serverName) {
     if (await client.isNapCatInstalled()) return true
 
     e.reply(`${serverName} 未安装 NapCat，正在自动安装（约1-2分钟）...`)
-
-    // OS 兼容性检查
     const osCheck = await client.executeCommand('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'')
     const osName = osCheck.success ? osCheck.stdout.trim() : 'unknown'
     if (/CentOS.*[78]/.test(osName)) {
@@ -107,8 +94,6 @@ export class AccountManager extends plugin {
       e.reply(`自动安装失败:\n${tail || '未知错误'}`)
       return false
     }
-
-    // 更新检测到的路径
     const detected = await client.detectNapCatPath()
     if (detected) {
       client.napcatBasePath = detected
@@ -119,14 +104,7 @@ export class AccountManager extends plugin {
     return true
   }
 
-  /**
-   * 确保账号配置已创建并已启动进程。
-   *
-   * 重复账号策略：同一 QQ 重新部署时 → 停旧进程 → 复用旧配置 → 启新进程。
-   * 不删除配置文件，保留用户已有的自定义配置。
-   *
-   * @returns {boolean} 成功返回 true，失败返回 false
-   */
+  
   async _ensureAccountStarted(e, client, serverName, qq) {
     const accounts    = await client.listNapCatAccounts()
     const alreadyExists = accounts.success && (accounts.accounts || []).includes(qq)
@@ -139,8 +117,6 @@ export class AccountManager extends plugin {
         if (mode === 'wrapper')      await client.napcatStop(qq)
         else if (mode === 'docker')  await client.executeCommand(`docker stop napcat_${qq} 2>/dev/null || true`)
         else                         await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>/dev/null || true`)
-
-        // 等进程退出（最多5秒）
         for (let i = 0; i < 5; i++) {
           await new Promise(r => setTimeout(r, 1000))
           if (!(await client.isNapCatRunning(qq)).running) break
@@ -159,7 +135,7 @@ export class AccountManager extends plugin {
       try {
         const ob11 = await client.readOB11Config('')
         if (ob11.success) await client.writeOB11Config(qq, ob11.data)
-      } catch { /* 可选，跳过 */ }
+      } catch {  }
     }
     const mode = await client.detectProcessMode()
     if (mode === 'wrapper') {
@@ -180,10 +156,7 @@ export class AccountManager extends plugin {
     return true
   }
 
-  /**
-   * 下载并发送二维码。
-   * 发送失败时明确告知用户，不假装成功。
-   */
+  
   async _sendQRCode(e, client, qq, serverName) {
     const tmpDir  = os.tmpdir()
     const tmpFile = path.join(tmpDir, `napcat_gl_qr_${Date.now()}.png`)
