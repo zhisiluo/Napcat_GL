@@ -1,0 +1,17 @@
+# 服务器配置（含 SSH 密码，禁止提交）
+config/servers.json
+
+# 依赖
+node_modules/
+
+# 日志
+logs/
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+.DS_Store
+
+# Claude 配置
+.claude/

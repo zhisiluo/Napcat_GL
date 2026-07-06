@@ -1,0 +1,24 @@
+{
+  "name": "napcat-gl",
+  "version": "1.0.0",
+  "description": "NapCat Global Load-balanced manager - YunzaiBot 多服务器 NapCat 管理插件",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test tests/unit/*.test.js",
+    "check": "node --check index.js components/*.js apps/*.js"
+  },
+  "keywords": [
+    "yunzai",
+    "bot",
+    "napcat",
+    "ssh",
+    "multi-server",
+    "load-balancer"
+  ],
+  "author": "Claude Code",
+  "license": "MIT",
+  "dependencies": {
+    "ssh2": "^1.16.0"
+  }
+}
