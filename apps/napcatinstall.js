@@ -21,7 +21,7 @@ export class NapcatInstall extends plugin {
   async installNapCat(e) {
     if (!e.isMaster) return true
     const server = (e.msg.match(/^#ngl安装\s+(\S+)$/) || [])[1]
-    if (!server) { e.reply('用法: #ngl安装 <服务器名>'); return true }
+    if (!server) { e.reply('用法: #ngl安装 服务器名'); return true }
 
     try {
       const client = await pool.get(server)
@@ -70,7 +70,7 @@ export class NapcatInstall extends plugin {
         `系统: ${osName}`,
         `路径: ${detectedPath || client.napcatBasePath}`,
         `WebUI: http://${info.host}:6099/webui`,
-        `下一步: #ngl快速部署 ${server} <QQ号>`,
+        `下一步: #ngl快速部署 ${server} QQ号`,
       ].join('\n'))
 
     } catch (err) { e.reply(formatError(err)) }
@@ -80,7 +80,7 @@ export class NapcatInstall extends plugin {
   async checkInstall(e) {
     if (!e.isMaster) return true
     const server = (e.msg.match(/^#ngl安装状态\s+(\S+)$/) || [])[1]
-    if (!server) { e.reply('用法: #ngl安装状态 <服务器名>'); return true }
+    if (!server) { e.reply('用法: #ngl安装状态 服务器名'); return true }
 
     try {
       const client = await pool.get(server)

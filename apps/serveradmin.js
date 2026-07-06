@@ -45,7 +45,7 @@ export class ServerAdmin extends plugin {
     if (!e.isMaster) return true
     const tokens = e.msg.trim().split(/\s+/)
     if (tokens.length < 5) {
-      e.reply('用法: #ngl添加服务器 <名称> <host:port> <用户名> <密码>')
+      e.reply('用法: #ngl添加服务器 名称 host:port 用户名 密码')
       return true
     }
     const [, name, hostport, username, ...rest] = tokens
@@ -118,7 +118,7 @@ export class ServerAdmin extends plugin {
   async editServer(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改服务器\s+(\S+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改服务器 <名称> <key> <value>'); return true }
+    if (!m) { e.reply('用法: #ngl修改服务器 名称 key value'); return true }
     const [, name, key, value] = m
     if (!pool._config?.servers?.[name]) { e.reply(`服务器 ${name} 不存在`); return true }
     const displayValue = key.toLowerCase().includes('password') ? '****' : value

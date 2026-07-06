@@ -24,7 +24,7 @@ export class AccountManager extends plugin {
   async quickDeploy(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl快速部署\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl快速部署 <服务器名> <QQ>'); return true }
+    if (!m) { e.reply('用法: #ngl快速部署 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
@@ -42,7 +42,7 @@ export class AccountManager extends plugin {
   async createAccount(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl创建账号\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl创建账号 <服务器名> <QQ>'); return true }
+    if (!m) { e.reply('用法: #ngl创建账号 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)

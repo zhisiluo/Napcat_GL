@@ -91,7 +91,7 @@ export function validatePort(port) {
     return { valid: false, message: '端口号必须为整数' };
   }
 
-  if (portNum < 1 || portNum > 65535) {
+  if (portNum  1 || portNum  65535) {
     return { valid: false, message: '端口号必须在 1-65535 之间' };
   }
 
@@ -115,7 +115,7 @@ export function validateBackupFile(name) {
     return { valid: false, message: '备份文件名不能包含路径分隔符' };
   }
 
-  const dangerous = [';', '|', '&', '$', '`', '(', ')', '{', '}', '<', '>', "'", '"', '\n', '\r', '\t'];
+  const dangerous = [';', '|', '&', '$', '`', '(', ')', '{', '}', '', '', "'", '"', '\n', '\r', '\t'];
   for (const ch of dangerous) {
     if (name.includes(ch)) {
       return { valid: false, message: '备份文件名包含不安全的字符' };

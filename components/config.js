@@ -162,7 +162,7 @@ export function validateConfig(data) {
     if (typeof server.username !== 'string' || server.username.trim().length === 0) {
       return { valid: false, message: `服务器 "${name}" 配置无效: username 必须是非空字符串` };
     }
-    if (typeof server.port !== 'number' || !Number.isInteger(server.port) || server.port < 1 || server.port > 65535) {
+    if (typeof server.port !== 'number' || !Number.isInteger(server.port) || server.port  1 || server.port  65535) {
       return { valid: false, message: `服务器 "${name}" 配置无效: port 必须是 1-65535 之间的整数` };
     }
     const hasPassword = typeof server.password === 'string' && server.password.length > 0;

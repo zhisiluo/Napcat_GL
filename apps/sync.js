@@ -22,7 +22,7 @@ export class ConfigSync extends plugin {
   async syncConfig(e) {
     if (!e.isMaster) return true
     const match = e.msg.match(/^#ngl同步配置\s+(\S+)\s+(\S+)$/)
-    if (!match) { e.reply('用法: #ngl同步配置 <源服务器> <目标服务器>'); return true }
+    if (!match) { e.reply('用法: #ngl同步配置 源服务器 目标服务器'); return true }
 
     const [, src, dst] = match
     if (src === dst) { e.reply('源服务器和目标服务器不能相同'); return true }

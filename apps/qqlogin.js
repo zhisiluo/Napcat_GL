@@ -23,7 +23,7 @@ export class QQLogin extends plugin {
   async getQRCode(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl扫码\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl扫码 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl扫码 服务器名'); return true }
 
     let localPath = ''
     try {

@@ -25,7 +25,7 @@ export class NapcatSystem extends plugin {
   async systemInfo(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl系统信息\s+(\S+)$/)
-    if (!_m) { e.reply('用法: #ngl系统信息 <服务器名>'); return true }
+    if (!_m) { e.reply('用法: #ngl系统信息 服务器名'); return true }
     try {
       const client = await pool.get(_m[1])
       const r = await client.getSystemInfo()
@@ -48,7 +48,7 @@ export class NapcatSystem extends plugin {
   async versionInfo(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl版本\s+(\S+)$/)
-    if (!_m) { e.reply('用法: #ngl版本 <服务器名>'); return true }
+    if (!_m) { e.reply('用法: #ngl版本 服务器名'); return true }
     try {
       const client = await pool.get(_m[1])
       const [ver, installed] = await Promise.all([
@@ -69,7 +69,7 @@ export class NapcatSystem extends plugin {
   async processInfo(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl进程\s+(\S+)$/)
-    if (!_m) { e.reply('用法: #ngl进程 <服务器名>'); return true }
+    if (!_m) { e.reply('用法: #ngl进程 服务器名'); return true }
     try {
       const client = await pool.get(_m[1])
       const r = await client.getNapCatProcesses()
@@ -88,7 +88,7 @@ export class NapcatSystem extends plugin {
   async portStatus(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl端口\s+(\S+)$/)
-    if (!_m) { e.reply('用法: #ngl端口 <服务器名>'); return true }
+    if (!_m) { e.reply('用法: #ngl端口 服务器名'); return true }
     try {
       const client = await pool.get(_m[1])
       const accounts = await client.listNapCatAccounts()
@@ -115,7 +115,7 @@ export class NapcatSystem extends plugin {
   async serviceStatus(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl服务状态\s+(\S+)$/)
-    if (!_m) { e.reply('用法: #ngl服务状态 <服务器名>'); return true }
+    if (!_m) { e.reply('用法: #ngl服务状态 服务器名'); return true }
     try {
       const client = await pool.get(_m[1])
       const [accounts, processes] = await Promise.all([
@@ -148,7 +148,7 @@ export class NapcatSystem extends plugin {
   async listLogFiles(e) {
     if (!e.isMaster) return true
     const _m = e.msg.match(/^#ngl日志文件\s+(\S+)$/)
-    if (!_m) { e.reply('用法: #ngl日志文件 <服务器名>'); return true }
+    if (!_m) { e.reply('用法: #ngl日志文件 服务器名'); return true }
     try {
       const client = await pool.get(_m[1])
       const r = await client.listLogFiles()

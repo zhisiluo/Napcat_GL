@@ -51,7 +51,7 @@ export class NapcatConfig extends plugin {
   async viewGlobalConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看配置\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl查看配置 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl查看配置 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readNapCatGlobalConfig()
@@ -63,7 +63,7 @@ export class NapcatConfig extends plugin {
   async editGlobalConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改配置\s+(\S+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改配置 <服务器名> <key> <value>'); return true }
+    if (!m) { e.reply('用法: #ngl修改配置 服务器名 key value'); return true }
     const [, serverName, key, value] = m
     try {
       const client = await pool.get(serverName)
@@ -109,7 +109,7 @@ export class NapcatConfig extends plugin {
   async viewAccountConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看账号配置\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl查看账号配置 <服务器名> <QQ>'); return true }
+    if (!m) { e.reply('用法: #ngl查看账号配置 服务器名 QQ'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readNapCatAccountConfig(m[2])
@@ -121,7 +121,7 @@ export class NapcatConfig extends plugin {
   async viewWebUI(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看WebUI\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl查看WebUI <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl查看WebUI 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readWebUIConfig()
@@ -136,7 +136,7 @@ export class NapcatConfig extends plugin {
   async editWebUI(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改WebUI\s+(\S+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改WebUI <服务器名> <key> <value>'); return true }
+    if (!m) { e.reply('用法: #ngl修改WebUI 服务器名 key value'); return true }
     const [, serverName, key, value] = m
     if (['token','totpSecret'].includes(key)) { e.reply(`${key} 为敏感字段，请手动编辑`); return true }
     try {
@@ -154,7 +154,7 @@ export class NapcatConfig extends plugin {
   async editAccountConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改账号配置\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改账号配置 <服务器名> <QQ> <key> <value>'); return true }
+    if (!m) { e.reply('用法: #ngl修改账号配置 服务器名 QQ key value'); return true }
     const [, serverName, qq, key, value] = m
     try {
       const client = await pool.get(serverName)
@@ -170,7 +170,7 @@ export class NapcatConfig extends plugin {
   async viewOB11Config(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看OB11\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl查看OB11 <服务器名> <QQ>'); return true }
+    if (!m) { e.reply('用法: #ngl查看OB11 服务器名 QQ'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readOB11Config(m[2])
@@ -181,7 +181,7 @@ export class NapcatConfig extends plugin {
   async editOB11Config(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改OB11\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改OB11 <服务器名> <QQ> <key> <value>'); return true }
+    if (!m) { e.reply('用法: #ngl修改OB11 服务器名 QQ key value'); return true }
     const [, serverName, qq, key, value] = m
     try {
       const client = await pool.get(serverName)
@@ -197,7 +197,7 @@ export class NapcatConfig extends plugin {
   async listConfigFiles(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl配置文件列表\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl配置文件列表 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl配置文件列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.listConfigFiles()
@@ -213,7 +213,7 @@ export class NapcatConfig extends plugin {
   async showConfigDir(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl配置目录\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl配置目录 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl配置目录 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const wp = await client.getWebUIPort()

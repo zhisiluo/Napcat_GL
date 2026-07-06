@@ -22,7 +22,7 @@ export class NapcatBackup extends plugin {
   async createBackup(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl备份\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl备份 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl备份 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.backupConfigDir()
@@ -34,7 +34,7 @@ export class NapcatBackup extends plugin {
   async listBackups(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl备份列表\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl备份列表 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl备份列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.listBackups()
@@ -46,7 +46,7 @@ export class NapcatBackup extends plugin {
   async restoreBackup(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl恢复\s+(\S+)\s+([\w.\-]+\.tar\.gz)$/)
-    if (!m) { e.reply('用法: #ngl恢复 <服务器名> <文件名>.tar.gz'); return true }
+    if (!m) { e.reply('用法: #ngl恢复 服务器名 文件名.tar.gz'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.restoreConfigDir(m[2])
@@ -58,7 +58,7 @@ export class NapcatBackup extends plugin {
   async deleteBackup(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl删除备份\s+(\S+)\s+([\w.\-]+\.tar\.gz)$/)
-    if (!m) { e.reply('用法: #ngl删除备份 <服务器名> <文件名>.tar.gz'); return true }
+    if (!m) { e.reply('用法: #ngl删除备份 服务器名 文件名.tar.gz'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.deletePath(`${client.napcatConfigDir}/../backups/${m[2]}`)

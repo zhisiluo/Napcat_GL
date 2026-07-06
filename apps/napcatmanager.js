@@ -56,7 +56,7 @@ export class NapcatManager extends plugin {
   async napcatAction(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl(启动|停止|重启|日志)\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl<启动|停止|重启|日志> <服务器名> <QQ>'); return true }
+    if (!m) { e.reply('用法: #ngl启动|停止|重启|日志 服务器名 QQ'); return true }
     const [, action, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
@@ -92,7 +92,7 @@ export class NapcatManager extends plugin {
   async napcatKill(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl强制停止\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl强制停止 <服务器名> <QQ>'); return true }
+    if (!m) { e.reply('用法: #ngl强制停止 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
@@ -109,7 +109,7 @@ export class NapcatManager extends plugin {
   async napcatUpdate(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl更新\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl更新 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl更新 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const mode = await client.detectProcessMode()
@@ -151,66 +151,66 @@ export class NapcatManager extends plugin {
   _helpPages = {
     '服务器': [
       '#ngl服务器列表',
-      '#ngl添加服务器 <名称> <host:port> <用户名> <密码>',
-      '#ngl删除服务器 <名称>',
-      '#ngl切换 <名称>',
-      '#ngl测试 <名称>',
-      '#ngl修改服务器 <名称> <key> <value>',
+      '#ngl添加服务器 名称 host:port 用户名 密码',
+      '#ngl删除服务器 名称',
+      '#ngl切换 名称',
+      '#ngl测试 名称',
+      '#ngl修改服务器 名称 key value',
     ],
     '服务': [
       '#ngl状态',
-      '#ngl状态 <服务器名>',
-      '#ngl启动 <服务器名> <QQ>',
-      '#ngl停止 <服务器名> <QQ>',
-      '#ngl重启 <服务器名> <QQ>',
-      '#ngl日志 <服务器名> <QQ>',
-      '#ngl强制停止 <服务器名> <QQ>',
-      '#ngl更新 <服务器名>',
+      '#ngl状态 服务器名',
+      '#ngl启动 服务器名 QQ',
+      '#ngl停止 服务器名 QQ',
+      '#ngl重启 服务器名 QQ',
+      '#ngl日志 服务器名 QQ',
+      '#ngl强制停止 服务器名 QQ',
+      '#ngl更新 服务器名',
     ],
     '系统': [
-      '#ngl系统信息 <服务器名>',
-      '#ngl版本 <服务器名>',
-      '#ngl进程 <服务器名>',
-      '#ngl端口 <服务器名>',
-      '#ngl服务状态 <服务器名>',
-      '#ngl日志文件 <服务器名>',
+      '#ngl系统信息 服务器名',
+      '#ngl版本 服务器名',
+      '#ngl进程 服务器名',
+      '#ngl端口 服务器名',
+      '#ngl服务状态 服务器名',
+      '#ngl日志文件 服务器名',
     ],
     '配置': [
-      '#ngl查看配置 <服务器名>',
-      '#ngl修改配置 <服务器名> <key> <value>',
-      '#ngl查看WebUI <服务器名>',
-      '#ngl修改WebUI <服务器名> <key> <value>',
+      '#ngl查看配置 服务器名',
+      '#ngl修改配置 服务器名 key value',
+      '#ngl查看WebUI 服务器名',
+      '#ngl修改WebUI 服务器名 key value',
       '#ngl账号列表',
-      '#ngl查看账号配置 <服务器名> <QQ>',
-      '#ngl修改账号配置 <服务器名> <QQ> <key> <value>',
-      '#ngl查看OB11 <服务器名> <QQ>',
-      '#ngl修改OB11 <服务器名> <QQ> <key> <value>',
-      '#ngl配置文件列表 <服务器名>',
-      '#ngl配置目录 <服务器名>',
+      '#ngl查看账号配置 服务器名 QQ',
+      '#ngl修改账号配置 服务器名 QQ key value',
+      '#ngl查看OB11 服务器名 QQ',
+      '#ngl修改OB11 服务器名 QQ key value',
+      '#ngl配置文件列表 服务器名',
+      '#ngl配置目录 服务器名',
     ],
     '账号': [
-      '#ngl快速部署 <服务器名> <QQ>',
-      '#ngl创建账号 <服务器名> <QQ>',
-      '#ngl扫码 <服务器名>',
+      '#ngl快速部署 服务器名 QQ',
+      '#ngl创建账号 服务器名 QQ',
+      '#ngl扫码 服务器名',
     ],
     '插件': [
-      '#ngl插件列表 <服务器名>',
-      '#ngl插件信息 <服务器名> <插件ID>',
-      '#ngl插件启用 <服务器名> <插件ID>',
-      '#ngl插件禁用 <服务器名> <插件ID>',
-      '#ngl查看webui <服务器名>',
-      '#ngl查看webui <服务器名> key',
+      '#ngl插件列表 服务器名',
+      '#ngl插件信息 服务器名 插件ID',
+      '#ngl插件启用 服务器名 插件ID',
+      '#ngl插件禁用 服务器名 插件ID',
+      '#ngl查看webui 服务器名',
+      '#ngl查看webui 服务器名 key',
     ],
     '备份': [
-      '#ngl备份 <服务器名>',
-      '#ngl备份列表 <服务器名>',
-      '#ngl恢复 <服务器名> <文件名.tar.gz>',
-      '#ngl删除备份 <服务器名> <文件名.tar.gz>',
+      '#ngl备份 服务器名',
+      '#ngl备份列表 服务器名',
+      '#ngl恢复 服务器名 文件名.tar.gz',
+      '#ngl删除备份 服务器名 文件名.tar.gz',
     ],
     '其他': [
-      '#ngl安装 <服务器名>',
-      '#ngl安装状态 <服务器名>',
-      '#ngl同步配置 <源服务器> <目标服务器>',
+      '#ngl安装 服务器名',
+      '#ngl安装状态 服务器名',
+      '#ngl同步配置 源服务器 目标服务器',
     ],
   }
 

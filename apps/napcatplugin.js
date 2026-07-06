@@ -24,7 +24,7 @@ export class NapcatPlugin extends plugin {
   async listPlugins(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件列表\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl插件列表 <服务器名>'); return true }
+    if (!m) { e.reply('用法: #ngl插件列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const apiResult = await client.webuiApiGet('/api/Plugin')
@@ -55,7 +55,7 @@ export class NapcatPlugin extends plugin {
   async pluginInfo(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件信息\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl插件信息 <服务器名> <插件ID>'); return true }
+    if (!m) { e.reply('用法: #ngl插件信息 服务器名 插件ID'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.webuiApiGet(`/api/Plugin/${m[2]}`)
@@ -67,7 +67,7 @@ export class NapcatPlugin extends plugin {
   async enablePlugin(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件启用\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl插件启用 <服务器名> <插件ID>'); return true }
+    if (!m) { e.reply('用法: #ngl插件启用 服务器名 插件ID'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.webuiApiPost(`/api/Plugin/${m[2]}/enable`)
@@ -79,7 +79,7 @@ export class NapcatPlugin extends plugin {
   async disablePlugin(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件禁用\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl插件禁用 <服务器名> <插件ID>'); return true }
+    if (!m) { e.reply('用法: #ngl插件禁用 服务器名 插件ID'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.webuiApiPost(`/api/Plugin/${m[2]}/disable`)
@@ -90,7 +90,7 @@ export class NapcatPlugin extends plugin {
   async checkWebUI(e) {
     if (!e.isMaster) return true
     const match = e.msg.match(/^#ngl查看webui\s+(\S+)(\s+key)?$/)
-    if (!match) { e.reply('用法: #ngl查看webui <服务器名> [key]'); return true }
+    if (!match) { e.reply('用法: #ngl查看webui 服务器名 [key]'); return true }
 
     const serverName = match[1]
     const keyOnly    = !!match[2]
