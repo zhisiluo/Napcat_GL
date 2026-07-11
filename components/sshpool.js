@@ -211,6 +211,7 @@ class SSHClient {
   }
 
   async napcatKill(qq = '') {
+    if (qq) assertQQ(qq)
     const cmd = qq
       ? `pkill -f "napcat.*${qq}" 2>/dev/null || (ps aux | grep "napcat.*${qq}" | grep -v grep | awk '{print $2}' | xargs -r kill 2>/dev/null)`
       : `pkill -f "napcat" 2>/dev/null || (ps aux | grep napcat | grep -v grep | awk '{print $2}' | xargs -r kill 2>/dev/null)`
@@ -787,7 +788,7 @@ class ConnectionPool {
         client.napcatConfigDir = `${detected}/config`
         this._config.servers[name].napcatBasePath = detected
         this._config.servers[name].napcatConfigDir = `${detected}/config`
-        try { saveConfig(this._config, this._configPath) } catch {}
+        try { saveConfig(this._config, this._configPath) } catch (err) { logger.warn(`[ngl:pool] 保存检测路径失败: ${err.message}`) }
       }
     }
 

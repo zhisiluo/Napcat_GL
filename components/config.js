@@ -35,7 +35,7 @@ export function loadConfig(configPath) {
     raw = fs.readFileSync(resolvedPath, { encoding: 'utf-8' });
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log(`[INFO] [ngl:config] 配置文件不存在，自动创建: ${resolvedPath}`)
+      logger.info(`[ngl:config] 配置文件不存在，自动创建: ${resolvedPath}`)
       const empty = createEmptyConfig()
       try {
         if (fs.existsSync(DEFAULT_TEMPLATE_PATH)) {
@@ -45,14 +45,14 @@ export function loadConfig(configPath) {
         } else {
           saveConfig(empty, resolvedPath)
         }
-      } catch {  }
+      } catch (err) { logger.warn(`[ngl:config] 自动创建配置文件失败: ${err.message}`) }
       return empty
     }
-    console.log(`[WARN] [ngl:config] 读取配置文件失败: ${err.message}, 使用默认模板`)
+    logger.warn(`[ngl:config] 读取配置文件失败: ${err.message}, 使用默认模板`)
     return createEmptyConfig()
   }
   if (typeof raw !== 'string' || raw.trim().length === 0) {
-    console.log(`[WARN] [ngl:config] 配置文件为空: ${resolvedPath}, 使用默认模板`);
+    logger.warn(`[ngl:config] 配置文件为空: ${resolvedPath}, 使用默认模板`);
     return createEmptyConfig();
   }
 
@@ -60,11 +60,11 @@ export function loadConfig(configPath) {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    console.log(`[WARN] [ngl:config] 配置文件 JSON 解析失败: ${err.message}, 使用默认模板`);
+    logger.warn(`[ngl:config] 配置文件 JSON 解析失败: ${err.message}, 使用默认模板`);
     return createEmptyConfig();
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    console.log(`[WARN] [ngl:config] 配置文件顶层并非对象, 使用默认模板`);
+    logger.warn(`[ngl:config] 配置文件顶层并非对象, 使用默认模板`);
     return createEmptyConfig();
   }
   if (typeof parsed.servers !== 'object' || parsed.servers === null) {
@@ -89,7 +89,7 @@ export function saveConfig(data, configPath) {
   try {
     fs.writeFileSync(tmpPath, jsonStr, { mode: 0o600, encoding: 'utf-8' });
     fs.renameSync(tmpPath, resolvedPath);
-    console.log(`[INFO] [ngl:config] 配置已保存: ${resolvedPath}`);
+    logger.info(`[ngl:config] 配置已保存: ${resolvedPath}`);
     return true;
   } catch (err) {
     try {
@@ -98,7 +98,7 @@ export function saveConfig(data, configPath) {
       }
     } catch (_) {
     }
-    console.log(`[ERROR] [ngl:config] 保存配置失败: ${err.message}`);
+    logger.error(`[ngl:config] 保存配置失败: ${err.message}`);
     throw new Error(`写入配置文件失败 ${resolvedPath}: ${err.message}`);
   }
 }
@@ -128,7 +128,7 @@ function migrateConfig(raw) {
     }
 
     data._schemaVersion = 1;
-    console.log(`[INFO] [ngl:config] 配置已从 v0 迁移至 v1 (${entries.length} 台服务器)`);
+    logger.info(`[ngl:config] 配置已从 v0 迁移至 v1 (${entries.length} 台服务器)`);
   }
 
   return data;

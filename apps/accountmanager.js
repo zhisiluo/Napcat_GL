@@ -1,7 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { formatError, parseNapcatError } from '../components/errors.js'
-import { sleep } from '../components/utils.js'
+import { sleep, cleanTempFile, INSTALL_URL, DEP_INSTALL_CMD, OS_CHECK_CMD, filterInstallOutput } from '../components/utils.js'
 import { segment } from 'oicq'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -29,16 +29,12 @@ export class AccountManager extends plugin {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl快速部署\s+(\S+)\s+(\d+)$/)
     if (!m) { e.reply('用法: #ngl快速部署 服务器名 QQ'); return true }
-    const [, serverName, qq] = m
+    const [, serverName] = m
     try {
       const client = await pool.get(serverName)
       const installed = await this._ensureInstalled(e, client, serverName)
       if (!installed) return true
-      const started = await this._ensureAccountStarted(e, client, serverName, qq)
-      if (!started) return true
-      e.reply('正在等待二维码...')
-      await sleep(4000)
-      await this._sendQRCode(e, client, qq, serverName)
+      return this.createAccount(e)
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
@@ -98,7 +94,7 @@ export class AccountManager extends plugin {
         e.reply(segment.image(buf))
         e.reply(`QQ ${qq} 新二维码已发送，请扫码（3分钟内有效）`)
       } finally {
-        try { fs.unlinkSync(tmpFile) } catch {}
+        cleanTempFile(tmpFile)
       }
       this._monitorLogin(e, client, qq, serverName)
     } catch (err) { e.reply(formatError(err)) }
@@ -109,30 +105,20 @@ export class AccountManager extends plugin {
     if (await client.isNapCatInstalled()) return true
 
     e.reply(`${serverName} 未安装 NapCat，正在自动安装（约1-2分钟）...`)
-    const osCheck = await client.executeCommand('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'')
+    const osCheck = await client.executeCommand(OS_CHECK_CMD)
     const osName = osCheck.success ? osCheck.stdout.trim() : 'unknown'
     if (/CentOS.*[78]/.test(osName)) {
       e.reply(`不支持的系统: ${osName}（需要 Ubuntu 18+ / Debian 10+ / CentOS 9+）`)
       return false
     }
-    await client.executeCommand('apt install -y screen xvfb 2>/dev/null || yum install -y screen xorg-x11-server-Xvfb 2>/dev/null || true', 60000)
+    await client.executeCommand(DEP_INSTALL_CMD, 60000)
     const ir = await client.executeCommand(
-      'curl -fsSL https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1',
+      `curl -fsSL ${INSTALL_URL} -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1`,
       300000
     )
 
     if (!(await client.isNapCatInstalled())) {
-      const lines = (ir.stdout || ir.stderr || '').split('\n')
-        .filter(l => {
-          const t = l.trim()
-          if (!t) return false
-          if (/^\s*[\d.]+\s*%/.test(t)) return false
-          if (/^[O=#\s]+$/.test(t)) return false
-          if (/测速:/.test(t)) return false
-          return true
-        })
-        .slice(-8)
-        .join('\n')
+      const lines = filterInstallOutput(ir.stdout || ir.stderr || '')
       e.reply(`自动安装失败:\n${lines || '未知错误'}`)
       return false
     }
@@ -171,9 +157,9 @@ export class AccountManager extends plugin {
         return false
       }
       try {
-        const ob11 = await client.readOB11Config('')
+        const ob11 = await client.readOB11Config(qq)
         if (ob11.success) await client.writeOB11Config(qq, ob11.data)
-      } catch {}
+      } catch (err) { logger.warn(`[ngl] 复制OB11配置失败: ${err.message}`) }
     }
 
     const startR = await client.startInstance(qq)
@@ -199,7 +185,7 @@ export class AccountManager extends plugin {
         e.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
       }
     } finally {
-      try { fs.unlinkSync(tmpFile) } catch {}
+      cleanTempFile(tmpFile)
     }
   }
 
@@ -211,7 +197,7 @@ export class AccountManager extends plugin {
     try {
       const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
       startMtime = (r.stdout || '').trim() || '0'
-    } catch {}
+    } catch { startMtime = '0' }
 
     for (let i = 0; i < maxPolls; i++) {
       await sleep(POLL_INTERVAL)
@@ -237,7 +223,7 @@ export class AccountManager extends plugin {
                 e.reply(`QQ ${qq} 二维码已刷新，请重新扫码（3分钟内有效）`)
               }
             } finally {
-              try { fs.unlinkSync(tmpFile) } catch {}
+              cleanTempFile(tmpFile)
             }
           }
         }
@@ -247,7 +233,7 @@ export class AccountManager extends plugin {
           e.reply(`QQ ${qq} 进程已退出，请检查后重试`)
           return
         }
-      } catch {}
+      } catch (err) { logger.warn(`[ngl] 监控轮询异常: ${err.message}`) }
     }
 
     e.reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)

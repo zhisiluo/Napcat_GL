@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { formatError } from '../components/errors.js'
+import { cleanTempFile } from '../components/utils.js'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
@@ -70,7 +71,7 @@ export class ConfigSync extends plugin {
       try {
         const mode = await dstClient.detectProcessMode()
         if (mode === 'wrapper') await dstClient.executeCommand('napcat restart 2>&1 || true', 30000)
-      } catch {  }
+      } catch (err) { logger.warn(`[ngl] 同步后重启失败: ${err.message}`) }
       fs.unlinkSync(localPath)
       await srcClient.deletePath(srcTmpPath)
       await dstClient.deletePath(dstTmpPath)
@@ -83,8 +84,8 @@ export class ConfigSync extends plugin {
       ].join('\n'))
 
     } catch (err) {
-      if (localPath) { try { fs.unlinkSync(localPath) } catch {} }
-      e.reply(`同步失败: ${formatError(err)}`)
+      if (localPath) cleanTempFile(localPath)
+      e.reply(formatError(err))
     }
     return true
   }

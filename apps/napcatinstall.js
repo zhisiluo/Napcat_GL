@@ -1,8 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { formatError } from '../components/errors.js'
-
-const INSTALL_URL = 'https://nclatest.znin.net/NapNeko/NapCat-Installer/main/script/install.sh'
+import { INSTALL_URL, DEP_INSTALL_CMD, OS_CHECK_CMD, filterInstallOutput } from '../components/utils.js'
 
 export class NapcatInstall extends plugin {
   constructor() {
@@ -30,7 +29,7 @@ export class NapcatInstall extends plugin {
         e.reply(`[INS_NOCURL] ${server} 缺少 curl，请先安装 curl`)
         return true
       }
-      const osCheck = await client.executeCommand('cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d \'"\'')
+      const osCheck = await client.executeCommand(OS_CHECK_CMD)
       const osName  = osCheck.success ? osCheck.stdout.trim() : 'unknown'
       if (/CentOS.*[78]/.test(osName)) {
         e.reply(`[INS_UNSUP_OS] ${osName} 不受支持。需要 Ubuntu 18+ / Debian 10+ / CentOS 9+`)
@@ -42,10 +41,7 @@ export class NapcatInstall extends plugin {
       }
 
       e.reply(`${server}: ${osName}，开始安装...`)
-      await client.executeCommand(
-        'apt install -y screen xvfb 2>/dev/null || yum install -y screen xorg-x11-server-Xvfb 2>/dev/null || true',
-        60000
-      )
+      await client.executeCommand(DEP_INSTALL_CMD, 60000)
       e.reply('正在下载并执行安装脚本（约1-2分钟）...')
       const installResult = await client.executeCommand(
         `curl -fsSL ${INSTALL_URL} -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1`,
@@ -55,23 +51,13 @@ export class NapcatInstall extends plugin {
         `test -d "${client.napcatBasePath}/config" && echo "INSTALL_OK" || echo "INSTALL_FAIL"`
       )
       if (verify.stdout?.trim() !== 'INSTALL_OK') {
-        const lines = (installResult.stdout || installResult.stderr || '').split('\n')
-          .filter(l => {
-            const t = l.trim()
-            if (!t) return false
-            if (/^\s*[\d.]+\s*%/.test(t)) return false
-            if (/^[O=#\s]+$/.test(t)) return false
-            if (/测速:/.test(t)) return false
-            return true
-          })
-          .slice(-8)
-          .join('\n')
+        const lines = filterInstallOutput(installResult.stdout || installResult.stderr || '')
         e.reply(`安装失败:\n${lines || '未知错误'}`)
         return true
       }
       const detectedPath = await client.detectNapCatPath()
       if (detectedPath) {
-        try { await pool.updateConfig(server, 'napcatBasePath', detectedPath) } catch {}
+        try { await pool.updateConfig(server, 'napcatBasePath', detectedPath) } catch (err) { logger.warn(`[ngl] 保存检测路径失败: ${err.message}`) }
       }
 
       const info = client.getConnectionInfo()
