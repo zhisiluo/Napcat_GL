@@ -2,180 +2,222 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NapCat GL 帮助</title>
 <style>
+/* ── palette ─────────────────────────────────────────────────────────
+   Seed: oklch(0.340 0.159 262) — deep cobalt twilight
+   Strategy: Restrained dark; brand lives in primary, not in bg
+──────────────────────────────────────────────────────────────────── */
+:root {
+  --bg:         oklch(0.12 0.022 262);   /* cobalt near-black */
+  --surface:    oklch(0.17 0.018 262);   /* panel layer */
+  --surface-hi: oklch(0.21 0.015 262);   /* card layer */
+  --border:     oklch(0.28 0.014 262);   /* subtle edge */
+  --border-lo:  oklch(0.22 0.012 262);   /* inner divider */
+  --ink:        oklch(0.93 0.006 262);   /* primary text */
+  --ink-muted:  oklch(0.58 0.012 262);   /* secondary text */
+  --ink-dim:    oklch(0.40 0.010 262);   /* tertiary / footer */
+  --primary:    oklch(0.62 0.18  262);   /* cobalt — command names */
+  --primary-lo: oklch(0.62 0.18  262 / 0.12); /* tint */
+  --badge-bg:   oklch(0.22 0.016 262);
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   width: 1000px;
-  background: linear-gradient(160deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
-  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
-  color: #c9d1d9;
-  padding: 0;
+  background: var(--bg);
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
 
 #container {
-  padding: 28px 28px 20px;
+  padding: 24px 24px 18px;
 }
 
-/* ── 顶部标题 ── */
+/* ── header ─────────────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  margin-bottom: 22px;
-}
-.header-logo {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #58a6ff, #3fb950);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 900;
-  color: #fff;
-  flex-shrink: 0;
-}
-.header-text .title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #f0f6fc;
-  letter-spacing: 1px;
-}
-.header-text .sub {
-  font-size: 12px;
-  color: #8b949e;
-  margin-top: 3px;
-}
-.header-badge {
-  margin-left: auto;
-  background: rgba(88,166,255,0.12);
-  border: 1px solid rgba(88,166,255,0.3);
-  border-radius: 20px;
-  padding: 4px 14px;
-  font-size: 12px;
-  color: #58a6ff;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-lo);
+  margin-bottom: 18px;
 }
 
-/* ── 分组 ── */
+.logo {
+  width: 42px;
+  height: 42px;
+  background: var(--primary);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  font-weight: 800;
+  color: oklch(0.12 0.022 262);
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.header-text {
+  flex: 1;
+}
+.header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.header-sub {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+.header-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.version-badge {
+  font-size: 11px;
+  font-family: "SF Mono", "Consolas", "Cascadia Code", monospace;
+  color: var(--primary);
+  background: var(--primary-lo);
+  border: 1px solid oklch(0.62 0.18 262 / 0.25);
+  border-radius: 5px;
+  padding: 2px 9px;
+  letter-spacing: 0.01em;
+}
+.header-hint {
+  font-size: 10.5px;
+  color: var(--ink-dim);
+}
+
+/* ── groups grid ─────────────────────────────────────────────── */
 .groups {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
+
 .group {
-  background: rgba(22,27,34,0.8);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   overflow: hidden;
 }
+
 .group-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  gap: 7px;
+  padding: 8px 12px;
+  background: var(--surface-hi);
+  border-bottom: 1px solid var(--border-lo);
 }
 .group-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
-.group-name {
-  font-size: 13px;
-  font-weight: 600;
-  color: #f0f6fc;
-}
-.group-count {
-  margin-left: auto;
-  font-size: 11px;
-  color: #8b949e;
-  background: rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 1px 8px;
-}
-
-/* ── 命令列表 ── */
-.cmd-list {
-  padding: 8px 6px;
-}
-.cmd-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  transition: background 0.1s;
-}
-.cmd-row:hover { background: rgba(255,255,255,0.04); }
-.cmd-name {
+.group-label {
   font-size: 12px;
   font-weight: 600;
-  color: #79c0ff;
-  white-space: nowrap;
-  flex-shrink: 0;
+  color: var(--ink);
+  letter-spacing: 0.005em;
+  flex: 1;
 }
-.cmd-sep {
-  width: 1px;
-  height: 10px;
-  background: rgba(255,255,255,0.12);
-  flex-shrink: 0;
-  align-self: center;
+.group-count {
+  font-size: 10.5px;
+  font-family: "SF Mono", "Consolas", monospace;
+  color: var(--ink-dim);
+  background: var(--badge-bg);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ── command rows ─────────────────────────────────────────────── */
+.cmd-list {
+  padding: 4px 0;
+}
+.cmd-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0;
+  padding: 4px 12px;
+  align-items: baseline;
+}
+.cmd-row + .cmd-row {
+  border-top: 1px solid var(--border-lo);
+}
+.cmd-name {
+  font-family: "SF Mono", "Consolas", "Cascadia Code", "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--primary);
+  white-space: nowrap;
+  padding-right: 10px;
+  line-height: 1.8;
 }
 .cmd-desc {
   font-size: 11px;
-  color: #8b949e;
-  line-height: 1.4;
+  color: var(--ink-muted);
+  line-height: 1.8;
 }
 
-/* ── 底部 ── */
+/* ── footer ─────────────────────────────────────────────────── */
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  font-size: 11px;
-  color: #484f58;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-lo);
+  font-size: 10.5px;
+  color: var(--ink-dim);
 }
-.footer-tip {
-  color: #6e7681;
+.footer-left {
+  font-family: "SF Mono", "Consolas", monospace;
 }
 </style>
 </head>
 <body>
 <div id="container">
 
+  <!-- header -->
   <div class="header">
-    <div class="header-logo">N</div>
+    <div class="logo">N</div>
     <div class="header-text">
-      <div class="title">NapCat GL 管理插件</div>
-      <div class="sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
+      <div class="header-title">NapCat GL 管理插件</div>
+      <div class="header-sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
     </div>
-    <div class="header-badge">v{{version}}</div>
+    <div class="header-meta">
+      <span class="version-badge">v{{version}}</span>
+      <span class="header-hint">TRSS-Yunzai</span>
+    </div>
   </div>
 
+  <!-- groups -->
   <div class="groups">
     {{each helpGroups group}}
     <div class="group">
       <div class="group-header">
-        <div class="group-dot" style="background:{{group.color}}"></div>
-        <span class="group-name">{{group.group}}</span>
-        <span class="group-count">{{group.list.length}} 条</span>
+        <span class="group-dot" style="background:{{group.color}}"></span>
+        <span class="group-label">{{group.group}}</span>
+        <span class="group-count">{{group.list.length}}</span>
       </div>
       <div class="cmd-list">
         {{each group.list cmd}}
         <div class="cmd-row">
           <span class="cmd-name">{{cmd.title}}</span>
-          <div class="cmd-sep"></div>
           <span class="cmd-desc">{{cmd.desc}}</span>
         </div>
         {{/each}}
@@ -184,9 +226,10 @@ body {
     {{/each}}
   </div>
 
+  <!-- footer -->
   <div class="footer">
-    <span class="footer-tip">#ngl帮助 查看此图</span>
-    <span>NapCat-GL · TRSS-Yunzai</span>
+    <span class="footer-left">#ngl帮助</span>
+    <span>NapCat-GL · github.com/zhisiluo/Napcat_GL</span>
   </div>
 
 </div>
