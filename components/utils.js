@@ -26,7 +26,7 @@ export function filterInstallOutput(output) {
       const t = l.trim()
       if (!t) return false
       if (/^\s*[\d.]+\s*%/.test(t)) return false
-      if (/^[O=#\s]+$/.test(t)) return false
+      if (/^[O=#\[\]\s]+$/.test(t)) return false
       if (/测速:/.test(t)) return false
       return true
     })
