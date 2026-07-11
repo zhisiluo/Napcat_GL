@@ -17,9 +17,6 @@ export const DEP_INSTALL_CMD = 'apt install -y screen xvfb 2>/dev/null || yum in
 
 export const OS_CHECK_CMD = `cat /etc/os-release 2>/dev/null | grep PRETTY_NAME | cut -d= -f2 | tr -d '"'`
 
-export const DEFAULT_WEBUI_PORT = 6099
-export const DEFAULT_SSH_PORT = 22
-
 export function filterInstallOutput(output) {
   return (output || '').split('\n')
     .filter(l => {

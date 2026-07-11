@@ -195,21 +195,8 @@ class SSHClient {
 
   async checkLoginStatus(qq) {
     assertQQ(qq)
-    // 进程存活是最基本的前提
     const running = await this.isNapCatRunning(qq)
-    if (!running.running) return { status: 'offline' }
-    // napcat status 命令(仅wrapper模式有效)
-    try {
-      const r = await this.executeCommand(`napcat status ${qq}`)
-      if (r.success && r.stdout) {
-        const out = r.stdout || ''
-        if (/在线|online|正常运行|登录成功/i.test(out)) return { status: 'online' }
-        if (/扫码|qrcode|二维码|等待.*扫描|waiting.*scan|未运行|已停止/i.test(out)) return { status: 'waiting_qr' }
-        return { status: 'waiting_qr' }
-      }
-    } catch {}
-    // 进程存活但无法判断状态→等待扫码
-    return { status: 'waiting_qr' }
+    return { status: running.running ? 'waiting_qr' : 'offline' }
   }
 
   async napcatStart(qq) {

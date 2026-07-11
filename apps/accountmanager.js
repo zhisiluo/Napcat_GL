@@ -63,8 +63,6 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
-      const status = await client.checkLoginStatus(qq).catch(() => ({ status: 'error' }))
-      if (status.status === 'online') { this.reply(`QQ ${qq} 已在 ${serverName} 登录`); return true }
       const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
 
       let r = await client.getQQQRCode(tmpFile, qq)
@@ -201,52 +199,10 @@ export class AccountManager extends plugin {
 
     for (let i = 0; i < maxPolls; i++) {
       if (i > 0) await sleep(POLL_INTERVAL)
-
-      try {
-        const status = await client.checkLoginStatus(qq)
-        logger.info(`[ngl] QQ ${qq} poll ${i+1}/${maxPolls}: status=${status.status}`)
-
-        if (status.status === 'online') {
-          reply(`QQ ${qq} 登录成功`)
-          return
-        }
-        if (status.status === 'offline') {
-          reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
-          return
-        }
-      } catch (err) {
-        logger.warn(`[ngl] QQ ${qq} 轮询异常: ${err.message}`)
-      }
-    }
-
-    reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
-  }
-
-  async _monitorLogin(e, client, qq, serverName) {
-    const reply = msg => { try { e.reply(msg) } catch {} }
-    const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
-
-    for (let i = 0; i < maxPolls; i++) {
-      if (i > 0) await sleep(POLL_INTERVAL)
-
-      try {
-        const status = await client.checkLoginStatus(qq)
-        logger.info(`[ngl] QQ ${qq} poll ${i+1}/${maxPolls}: status=${status.status} ${status.message||''}`)
-
-        if (status.status === 'online') {
-          reply(`QQ ${qq} 登录成功`)
-          return
-        }
-        if (status.status === 'login_failed') {
-          reply(`QQ ${qq} 登录失败: ${status.message}`)
-          return
-        }
-        if (status.status === 'offline') {
-          reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
-          return
-        }
-      } catch (err) {
-        logger.warn(`[ngl] QQ ${qq} 轮询异常: ${err.message}`)
+      const running = await client.isNapCatRunning(qq).catch(() => ({ running: false }))
+      if (!running.running) {
+        reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
+        return
       }
     }
 
