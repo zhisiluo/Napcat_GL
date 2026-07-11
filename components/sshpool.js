@@ -194,23 +194,24 @@ class SSHClient {
 
   async checkLoginStatus(qq) {
     assertQQ(qq)
-    // 尝试 napcat status (wrapper模式)
-    const r = await this.executeCommand(`napcat status ${qq}`)
-    if (r.success && r.stdout) {
-      const out = r.stdout || ''
-      if (/在线|online|正常运行/i.test(out)) return { status: 'online' }
-      if (/扫码|qrcode|二维码|等待.*扫描|waiting.*scan/i.test(out)) return { status: 'waiting_qr' }
-      if (/离线|offline|已停止|stopped/i.test(out)) return { status: 'offline', message: out.trim() }
-      if (/登录失败|login.*fail|密码|password/i.test(out)) return { status: 'login_failed', message: out.trim() }
-    }
-    // 回退: 进程存活时间判断 (screen/docker/nohup通用)
+    // 1. 通过 WebUI API 检测 (最可靠)
+    try {
+      const apiR = await this.webuiApiPost('/api/QQLogin/CheckLoginStatus')
+      if (apiR.success && apiR.data) {
+        if (apiR.data.isLogin === true) return { status: 'online' }
+        if (apiR.data.isOffline === true) return { status: 'offline', message: apiR.data.loginError || 'QQ已离线' }
+        if (apiR.data.qrcodeurl) return { status: 'waiting_qr' }
+        return { status: 'waiting_qr' }
+      }
+    } catch {}
+    // 2. 回退: 进程存活时间判断
     const proc = await this.executeCommand(
       `ps -o etimes= -p $(ps aux | grep -v grep | grep -E "napcat|qq.*-q ${qq}|xvfb.*-q ${qq}" | awk '{print $2}' | head -1) 2>/dev/null || echo "0"`
     )
     if (proc.success) {
       const seconds = parseInt(proc.stdout.trim()) || 0
-      if (seconds > 300) return { status: 'online' }       // 存活>5分钟=已登录
-      if (seconds > 0)   return { status: 'waiting_qr' }   // 存活<5分钟=等待扫码
+      if (seconds > 300) return { status: 'online' }
+      if (seconds > 0)   return { status: 'waiting_qr' }
     }
     const running = await this.isNapCatRunning(qq)
     if (!running.running) return { status: 'offline' }
