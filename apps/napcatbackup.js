@@ -1,6 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
-import { parseCommand } from '../components/parser.js'
 import { formatError } from '../components/errors.js'
 
 export class NapcatBackup extends plugin {

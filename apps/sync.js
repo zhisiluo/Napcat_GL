@@ -1,7 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { formatError } from '../components/errors.js'
-import { segment } from 'oicq'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
