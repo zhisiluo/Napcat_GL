@@ -198,9 +198,10 @@ class SSHClient {
     try {
       const apiR = await this.webuiApiPost('/api/QQLogin/CheckLoginStatus')
       if (apiR.success && apiR.data) {
-        if (apiR.data.isLogin === true) return { status: 'online' }
-        if (apiR.data.isOffline === true) return { status: 'offline', message: apiR.data.loginError || 'QQ已离线' }
-        if (apiR.data.qrcodeurl) return { status: 'waiting_qr' }
+        const d = apiR.data.data || apiR.data
+        if (d.isLogin === true) return { status: 'online' }
+        if (d.isOffline === true) return { status: 'offline', message: d.loginError || 'QQ已离线' }
+        if (d.qrcodeurl) return { status: 'waiting_qr' }
         return { status: 'waiting_qr' }
       }
     } catch {}
