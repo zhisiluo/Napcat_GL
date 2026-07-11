@@ -34,11 +34,8 @@ export class AccountManager extends plugin {
       const client = await pool.get(serverName)
       const installed = await this._ensureInstalled(e, client, serverName)
       if (!installed) return true
-      const started = await this._ensureAccountStarted(e, client, serverName, qq)
-      if (!started) return true
-      this.reply('正在等待二维码...')
-      await sleep(4000)
-      await this._sendQRCode(e, client, qq, serverName)
+      e.msg = `#ngl创建账号 ${serverName} ${qq}`
+      return this.createAccount(e)
     } catch (err) { this.reply(formatError(err)) }
     return true
   }
@@ -50,8 +47,6 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
-      const alreadyOnline = await this._checkAlreadyOnline(e, client, qq, serverName)
-      if (alreadyOnline) return true
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
       this.reply('正在等待二维码...')
@@ -79,8 +74,6 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
-      const alreadyOnline = await this._checkAlreadyOnline(e, client, qq, serverName)
-      if (alreadyOnline) return true
       const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
 
       let r = await client.getQQQRCode(tmpFile, qq)
@@ -191,6 +184,9 @@ export class AccountManager extends plugin {
   }
 
   async _sendQRCode(e, client, qq, serverName) {
+    // 发码前先检查是否已登录
+    if (await this._checkAlreadyOnline(e, client, qq, serverName)) return
+
     const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
     try {
       let r
