@@ -21,7 +21,7 @@ NapCat 多服务器远程管理插件，基于 [TRSS-Yunzai](https://github.com/
 
 ```bash
 git clone https://github.com/zhisiluo/Napcat_GL.git ./plugins/Napcat_GL-plugin/
-cd plugins/Napcat_GL-plugin && npm install
+cd plugins/Napcat_GL-plugin && pnpm install
 ```
 
 安装完成后重启 Yunzai 即可。
