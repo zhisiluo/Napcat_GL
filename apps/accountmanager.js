@@ -1,6 +1,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
 import { formatError, parseNapcatError } from '../components/errors.js'
+import { sleep } from '../components/utils.js'
 import { segment } from 'oicq'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -36,9 +37,9 @@ export class AccountManager extends plugin {
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
       e.reply('正在等待二维码...')
-      await new Promise(r => setTimeout(r, 4000))
+      await sleep(4000)
       await this._sendQRCode(e, client, qq, serverName)
-    } catch (err) { e.reply(`快速部署失败: ${formatError(err)}`) }
+    } catch (err) { e.reply(formatError(err)) }
     return true
   }
 
@@ -52,9 +53,9 @@ export class AccountManager extends plugin {
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
       e.reply('正在等待二维码...')
-      await new Promise(r => setTimeout(r, 4000))
+      await sleep(4000)
       await this._sendQRCode(e, client, qq, serverName)
-    } catch (err) { e.reply(`创建失败: ${formatError(err)}`) }
+    } catch (err) { e.reply(formatError(err)) }
     return true
   }
 
@@ -70,31 +71,19 @@ export class AccountManager extends plugin {
       let r = await client.getQQQRCode(tmpFile)
 
       if (!r.success) {
-
         e.reply('未检测到二维码，正在重启进程重新生成...')
-        const mode = await client.detectProcessMode()
-        if (mode === 'wrapper') {
-          await client.napcatStop(qq)
-          await new Promise(res => setTimeout(res, 2000))
-          const startR = await client.napcatStart(qq)
-          if (!startR.success) {
-            e.reply(`重启失败: ${parseNapcatError(startR, qq, serverName)}`)
-            return true
-          }
-        } else if (mode === 'screen') {
-          await client.executeCommand(`pkill -f "napcat_${qq}" 2>/dev/null || true`)
-          await new Promise(res => setTimeout(res, 1000))
-          await client.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}"`)
-        } else {
-          await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>/dev/null || true`)
-          await new Promise(res => setTimeout(res, 1000))
-          await client.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
+        await client.stopInstance(qq)
+        await sleep(2000)
+        const startR = await client.startInstance(qq)
+        if (!startR.success) {
+          e.reply(parseNapcatError(startR, qq, serverName))
+          return true
         }
 
         e.reply('正在等待新二维码生成...')
         let got = false
         for (let i = 0; i < 10; i++) {
-          await new Promise(res => setTimeout(res, 2000))
+          await sleep(2000)
           r = await client.getQQQRCode(tmpFile)
           if (r.success) { got = true; break }
         }
@@ -158,26 +147,23 @@ export class AccountManager extends plugin {
   }
 
   async _ensureAccountStarted(e, client, serverName, qq) {
-    const accounts    = await client.listNapCatAccounts()
+    const accounts = await client.listNapCatAccounts()
     const alreadyExists = accounts.success && (accounts.accounts || []).includes(qq)
 
     if (alreadyExists) {
       const running = await client.isNapCatRunning(qq)
       if (running.running) {
         e.reply(`QQ ${qq} 正在运行，停止旧进程（保留配置）...`)
-        const mode = await client.detectProcessMode()
-        if (mode === 'wrapper')      await client.napcatStop(qq)
-        else if (mode === 'docker')  await client.executeCommand(`docker stop napcat_${qq} 2>/dev/null || true`)
-        else                         await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>/dev/null || true`)
+        await client.stopInstance(qq)
         for (let i = 0; i < 5; i++) {
-          await new Promise(r => setTimeout(r, 1000))
+          await sleep(1000)
           if (!(await client.isNapCatRunning(qq)).running) break
         }
       } else {
         e.reply(`QQ ${qq} 已配置（未运行），复用现有配置启动...`)
       }
     } else {
-      const globalCfg  = await client.readNapCatGlobalConfig()
+      const globalCfg = await client.readNapCatGlobalConfig()
       const baseConfig = (globalCfg.success && globalCfg.data) ? globalCfg.data : {}
       const writeResult = await client.writeNapCatAccountConfig(qq, { ...baseConfig, fileLog: true, consoleLog: true })
       if (!writeResult.success) {
@@ -189,20 +175,11 @@ export class AccountManager extends plugin {
         if (ob11.success) await client.writeOB11Config(qq, ob11.data)
       } catch {}
     }
-    const mode = await client.detectProcessMode()
-    if (mode === 'wrapper') {
-      const r = await client.napcatStart(qq)
-      if (!r.success) {
-        e.reply(parseNapcatError(r, qq, serverName))
-        return false
-      }
-    } else if (mode === 'screen') {
-      await client.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}"`)
-    } else if (mode === 'docker') {
-      e.reply(`配置已就绪。Docker 模式请手动启动: docker start napcat_${qq}`)
+
+    const startR = await client.startInstance(qq)
+    if (!startR.success) {
+      e.reply(parseNapcatError(startR, qq, serverName))
       return false
-    } else {
-      await client.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
     }
 
     return true
@@ -226,41 +203,27 @@ export class AccountManager extends plugin {
     }
   }
 
-  
-  _monitorLogin(e, client, qq, serverName) {
-    let done = false
-    let polls = 0
-    let startMtime = null
+  async _monitorLogin(e, client, qq, serverName) {
+    const qrPath = `${client.napcatBasePath}/cache/qrcode.png`
     const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
 
-    const qrPath = `${client.napcatBasePath}/cache/qrcode.png`
+    let startMtime = '0'
+    try {
+      const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
+      startMtime = (r.stdout || '').trim() || '0'
+    } catch {}
 
-    const finish = (msg) => {
-      if (done) return
-      done = true
-      clearInterval(timer)
-      e.reply(msg)
-    }
+    for (let i = 0; i < maxPolls; i++) {
+      await sleep(POLL_INTERVAL)
 
-    client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
-      .then(r => { startMtime = (r.stdout || '').trim() || '0' })
-      .catch(() => { startMtime = '0' })
-
-    const timer = setInterval(async () => {
-      if (done) { clearInterval(timer); return }
-      polls++
-      if (polls > maxPolls) {
-        finish(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
-        return
-      }
       try {
         const qrExists = await client.fileExists(qrPath)
         if (!qrExists) {
-          finish(`QQ ${qq} 登录成功`)
+          e.reply(`QQ ${qq} 登录成功`)
           return
         }
 
-        if (startMtime && startMtime !== '0') {
+        if (startMtime !== '0') {
           const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
           const cur = (r.stdout || '').trim()
           if (cur && cur !== '0' && cur !== startMtime) {
@@ -276,17 +239,17 @@ export class AccountManager extends plugin {
             } finally {
               try { fs.unlinkSync(tmpFile) } catch {}
             }
-            return
           }
         }
 
         const running = await client.isNapCatRunning(qq)
         if (!running.running) {
-          finish(`QQ ${qq} 进程已退出，请检查后重试`)
+          e.reply(`QQ ${qq} 进程已退出，请检查后重试`)
+          return
         }
-      } catch {
+      } catch {}
+    }
 
-      }
-    }, POLL_INTERVAL)
+    e.reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
   }
 }

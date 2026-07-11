@@ -6,6 +6,7 @@ import { Client } from 'ssh2'
 
 import { loadConfig, saveConfig } from './config.js'
 import { validateServerName, validateHost, validatePort } from './validator.js'
+import { assertQQ } from './utils.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const NO_COLOR = 'TERM=dumb NO_COLOR=1 '
@@ -58,6 +59,7 @@ class SSHClient {
       })
 
       this.client.on('error', (err) => {
+        this._lastError = err
         this.isConnected = false
         this._connecting = null
         resolve(false)
@@ -215,6 +217,32 @@ class SSHClient {
       : `pkill -f "napcat" 2>/dev/null || (ps aux | grep napcat | grep -v grep | awk '{print $2}' | xargs -r kill 2>/dev/null)`
     const result = await this.executeCommand(`${cmd} && echo "KILL_OK" || echo "KILL_FAIL"`)
     return { success: !!(result.stdout && result.stdout.includes('KILL_OK')), message: result.stdout || result.stderr || result.message || '' }
+  }
+
+  async startInstance(qq) {
+    assertQQ(qq)
+    const mode = await this.detectProcessMode()
+    if (mode === 'wrapper') return this.napcatStart(qq)
+    if (mode === 'docker')  return this.executeCommand(`docker start napcat_${qq} 2>&1`)
+    if (mode === 'screen')  return this.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}" 2>&1`)
+    return this.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
+  }
+
+  async stopInstance(qq) {
+    assertQQ(qq)
+    const mode = await this.detectProcessMode()
+    if (mode === 'wrapper') return this.napcatStop(qq)
+    if (mode === 'docker')  return this.executeCommand(`docker stop napcat_${qq} 2>&1`)
+    return this.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
+  }
+
+  async restartInstance(qq) {
+    assertQQ(qq)
+    const mode = await this.detectProcessMode()
+    if (mode === 'wrapper') return this.napcatRestart(qq)
+    if (mode === 'docker')  return this.executeCommand(`docker restart napcat_${qq} 2>&1`)
+    await this.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
+    return this.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
   }
 
   async isNapCatInstalled() {
@@ -712,6 +740,9 @@ class ConnectionPool {
       this._config = { _schemaVersion: 1, defaultServer: '', servers: {} }
     }
   }
+
+  hasServer(name)       { return !!this._config.servers?.[name] }
+  getServerConfig(name) { return this._config.servers?.[name] ?? null }
 
   async get(name) {
     if (name === 'all') name = undefined

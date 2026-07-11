@@ -27,7 +27,7 @@ export class ServerAdmin extends plugin {
       const servers = await pool.list()
       if (!servers.length) { e.reply('暂无服务器，使用 #ngl添加服务器 添加'); return true }
       const rows = servers.map(s => {
-        const cfg = pool._config?.servers?.[s.name]
+        const cfg = pool.getServerConfig(s.name)
         return [
           s.name,
           s.connected ? '在线' : (cfg?.disabled ? '已禁用' : '离线'),
@@ -40,20 +40,17 @@ export class ServerAdmin extends plugin {
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
+
   async addServer(e) {
     if (!e.isMaster) return true
     const tokens = e.msg.trim().split(/\s+/)
-    if (tokens.length < 5) {
-      e.reply('用法: #ngl添加服务器 名称 host:port 用户名 密码')
-      return true
-    }
+    if (tokens.length < 5) { e.reply('用法: #ngl添加服务器 名称 host:port 用户名 密码'); return true }
     const [, name, hostport, username, ...rest] = tokens
     const secret = rest.join(' ')
     const colonIdx = hostport.lastIndexOf(':')
     const host = colonIdx > 0 ? hostport.slice(0, colonIdx) : hostport
     const port = colonIdx > 0 ? parseInt(hostport.slice(colonIdx + 1), 10) || 22 : 22
     const isPrivateKey = secret.includes('-----BEGIN') || secret.length > 120
-
     try {
       e.reply('正在验证连接...')
       const result = await pool.add(name, {
@@ -61,11 +58,7 @@ export class ServerAdmin extends plugin {
         password: isPrivateKey ? '' : secret,
         privateKey: isPrivateKey ? secret : '',
       })
-      if (result.success) {
-        e.reply(`服务器 ${name} 已添加${pool._config?.defaultServer === name ? '（已设为默认）' : ''}`)
-      } else {
-        e.reply(`添加失败: [${result.code}] ${result.message}`)
-      }
+      e.reply(result.success ? `服务器 ${name} 已添加` : `添加失败: [${result.code}] ${result.message}`)
     } catch (err) { e.reply(formatError(err)) }
     return true
   }
@@ -73,7 +66,7 @@ export class ServerAdmin extends plugin {
   async deleteServer(e) {
     if (!e.isMaster) return true
     const name = (e.msg.match(/^#ngl删除服务器\s+(\S+)$/) || [])[1]
-    if (!pool._config?.servers?.[name]) { e.reply(`服务器 ${name} 不存在`); return true }
+    if (!pool.hasServer(name)) { e.reply(`服务器 ${name} 不存在`); return true }
     try {
       const r = await pool.remove(name)
       e.reply(r.success ? `服务器 ${name} 已删除` : `删除失败: [${r.code}] ${r.message}`)
@@ -109,7 +102,7 @@ export class ServerAdmin extends plugin {
     const m = e.msg.match(/^#ngl修改服务器\s+(\S+)\s+(\S+)\s+(.+)$/)
     if (!m) { e.reply('用法: #ngl修改服务器 名称 key value'); return true }
     const [, name, key, value] = m
-    if (!pool._config?.servers?.[name]) { e.reply(`服务器 ${name} 不存在`); return true }
+    if (!pool.hasServer(name)) { e.reply(`服务器 ${name} 不存在`); return true }
     const displayValue = key.toLowerCase().includes('password') ? '****' : value
     try {
       const r = await pool.updateConfig(name, key, value)

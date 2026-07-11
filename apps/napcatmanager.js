@@ -23,7 +23,6 @@ export class NapcatManager extends plugin {
   async napcatStatus(e) {
     if (!e.isMaster) return true
     const parsed = parseCommand(e.msg, pool)
-
     try {
       if (!parsed.server) {
         const servers = await pool.list()
@@ -59,32 +58,11 @@ export class NapcatManager extends plugin {
     try {
       const client = await pool.get(serverName)
       if (action === '日志') return this._handleLog(e, client, qq)
-      const mode = await client.detectProcessMode()
-      const r = await this._doAction(client, action, mode, qq)
+      const actionMap = { '启动': 'startInstance', '停止': 'stopInstance', '重启': 'restartInstance' }
+      const r = await client[actionMap[action]](qq)
       e.reply(r && r.success ? `QQ ${qq} ${action}: ${r.stdout || '完成'}` : parseNapcatError(r, qq, serverName))
     } catch (err) { e.reply(formatError(err)) }
     return true
-  }
-
-  async _doAction(client, action, mode, qq) {
-    if (action === '启动') {
-      if (mode === 'wrapper') return client.napcatStart(qq)
-      if (mode === 'docker')  return client.executeCommand(`docker start napcat_${qq} 2>&1`)
-      if (mode === 'screen')  return client.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}" 2>&1`)
-      return client.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
-    }
-    if (action === '停止') {
-      if (mode === 'wrapper') return client.napcatStop(qq)
-      if (mode === 'docker')  return client.executeCommand(`docker stop napcat_${qq} 2>&1`)
-      return client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
-    }
-    if (action === '重启') {
-      if (mode === 'wrapper') return client.napcatRestart(qq)
-      if (mode === 'docker')  return client.executeCommand(`docker restart napcat_${qq} 2>&1`)
-      await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
-      return client.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
-    }
-    return { success: false, message: `未知操作: ${action}` }
   }
 
   async napcatKill(e) {
@@ -94,11 +72,7 @@ export class NapcatManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
-      const mode = await client.detectProcessMode()
-      let r
-      if (mode === 'wrapper') r = await client.napcatKill(qq)
-      else if (mode === 'docker') r = await client.executeCommand(`docker stop napcat_${qq} 2>&1`)
-      else r = await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
+      const r = await client.napcatKill(qq)
       e.reply(r.success ? `QQ ${qq} 已强制终止` : parseNapcatError(r, qq, serverName))
     } catch (err) { e.reply(formatError(err)) }
     return true
@@ -122,16 +96,13 @@ export class NapcatManager extends plugin {
   async _handleLog(e, client, qq) {
     const TIMEOUT = 60000
     let buf = [], stopped = false
-
     const cleanup = () => { if (stopped) return; stopped = true; client.stopLogStream() }
-
     const timer = setTimeout(() => {
       if (stopped) return
       cleanup()
       const lines = buf.join('').split('\n').filter(l => l.trim()).slice(-100)
       e.reply(lines.join('\n') || `QQ ${qq} 无日志`)
     }, TIMEOUT)
-
     try {
       client.getLogStream(qq,
         d => buf.push(d),
@@ -145,5 +116,4 @@ export class NapcatManager extends plugin {
     }
     return true
   }
-
 }
