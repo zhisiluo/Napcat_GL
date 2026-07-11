@@ -97,8 +97,7 @@ export class NapcatSystem extends plugin {
       const lines = ['NapCat 服务状态']
 
       for (const acc of accs) {
-        const running = processes.running &&
-          processes.processes?.some(p => new RegExp(`\\b${acc}\\b`).test(p.command))
+        const running = processes.processes?.some(p => new RegExp(`\\b${acc}\\b`).test(p.command))
         lines.push(`  QQ ${acc}  ${running ? '运行中' : '已停止'}`)
       }
       if (!accs.length) lines.push('  无账号')
