@@ -2,180 +2,233 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NapCat GL 帮助</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   width: 1000px;
-  background: linear-gradient(160deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
-  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
-  color: #c9d1d9;
-  padding: 0;
+  background: #050508;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  color: #ededef;
+  position: relative;
+  overflow: hidden;
 }
 
+/* ── 环境光晕 ──────────────────────────────────────── */
+.ambient {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.18;
+}
+.blob-1 { width: 420px; height: 420px; background: #5E6AD2; top: -120px; left: -80px; }
+.blob-2 { width: 320px; height: 320px; background: #a855f7; top: 60px; right: -60px; opacity: 0.12; }
+.blob-3 { width: 280px; height: 280px; background: #06b6d4; bottom: 40px; left: 120px; opacity: 0.10; }
+
+/* ── 容器 ─────────────────────────────────────────── */
 #container {
-  padding: 28px 28px 20px;
+  position: relative;
+  z-index: 1;
+  padding: 26px 24px 20px;
 }
 
-/* ── 顶部标题 ── */
+/* ── 头部 ─────────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  margin-bottom: 22px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
 }
-.header-logo {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #58a6ff, #3fb950);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 900;
-  color: #fff;
+.logo-wrap {
+  position: relative;
   flex-shrink: 0;
 }
-.header-text .title {
-  font-size: 22px;
-  font-weight: 700;
-  color: #f0f6fc;
-  letter-spacing: 1px;
+.logo {
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(135deg, #5E6AD2 0%, #818cf8 100%);
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  box-shadow: 0 0 20px rgba(94,106,210,0.45);
 }
-.header-text .sub {
+.header-info { flex: 1; }
+.header-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f4f4f6;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.header-sub {
   font-size: 12px;
-  color: #8b949e;
+  color: #8a8f98;
   margin-top: 3px;
 }
-.header-badge {
-  margin-left: auto;
-  background: rgba(88,166,255,0.12);
-  border: 1px solid rgba(88,166,255,0.3);
-  border-radius: 20px;
-  padding: 4px 14px;
-  font-size: 12px;
-  color: #58a6ff;
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
 }
+.version-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: #818cf8;
+  background: rgba(94,106,210,0.15);
+  border: 1px solid rgba(94,106,210,0.3);
+  border-radius: 20px;
+  padding: 3px 12px;
+  letter-spacing: 0.02em;
+}
+.header-hint { font-size: 10.5px; color: #484f58; }
 
-/* ── 分组 ── */
+/* ── 分组网格 ─────────────────────────────────────── */
 .groups {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 10px;
 }
+
+/* ── 卡片 ─────────────────────────────────────────── */
 .group {
-  background: rgba(22,27,34,0.8);
+  background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
 }
+
 .group-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 9px 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
-.group-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
+.group-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
 }
-.group-name {
-  font-size: 13px;
+.group-label {
+  font-size: 12.5px;
   font-weight: 600;
-  color: #f0f6fc;
+  flex: 1;
+  letter-spacing: 0.005em;
 }
 .group-count {
-  margin-left: auto;
-  font-size: 11px;
-  color: #8b949e;
-  background: rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 1px 8px;
+  font-size: 10px;
+  color: #484f58;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 1px 7px;
+  font-weight: 500;
 }
 
-/* ── 命令列表 ── */
-.cmd-list {
-  padding: 8px 6px;
-}
+/* ── 命令行 ─────────────────────────────────────────── */
+.cmd-list { padding: 3px 0 4px; }
 .cmd-row {
-  display: flex;
-  align-items: baseline;
+  display: grid;
+  grid-template-columns: auto 1fr;
   gap: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  transition: background 0.1s;
+  align-items: center;
+  padding: 4px 13px;
 }
-.cmd-row:hover { background: rgba(255,255,255,0.04); }
+.cmd-row + .cmd-row { border-top: 1px solid rgba(255,255,255,0.035); }
 .cmd-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: #79c0ff;
+  font-family: "SF Mono", "Cascadia Code", "Consolas", "Courier New", monospace;
+  font-size: 10.5px;
+  font-weight: 500;
   white-space: nowrap;
-  flex-shrink: 0;
-}
-.cmd-sep {
-  width: 1px;
-  height: 10px;
-  background: rgba(255,255,255,0.12);
-  flex-shrink: 0;
-  align-self: center;
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.01em;
 }
 .cmd-desc {
   font-size: 11px;
-  color: #8b949e;
-  line-height: 1.4;
+  color: #8a8f98;
+  line-height: 1.45;
 }
 
-/* ── 底部 ── */
+/* ── 底部 ─────────────────────────────────────────── */
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  font-size: 11px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 10.5px;
   color: #484f58;
 }
-.footer-tip {
-  color: #6e7681;
+.footer-cmd {
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 10.5px;
+  color: #5E6AD2;
+  background: rgba(94,106,210,0.10);
+  border: 1px solid rgba(94,106,210,0.2);
+  border-radius: 5px;
+  padding: 2px 8px;
 }
 </style>
 </head>
 <body>
+
+<div class="ambient">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
 <div id="container">
 
   <div class="header">
-    <div class="header-logo">N</div>
-    <div class="header-text">
-      <div class="title">NapCat GL 管理插件</div>
-      <div class="sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
+    <div class="logo-wrap">
+      <div class="logo">N</div>
     </div>
-    <div class="header-badge">v{{version}}</div>
+    <div class="header-info">
+      <div class="header-title">NapCat GL 管理插件</div>
+      <div class="header-sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
+    </div>
+    <div class="header-right">
+      <span class="version-pill">v{{version}}</span>
+      <span class="header-hint">TRSS-Yunzai</span>
+    </div>
   </div>
 
   <div class="groups">
     {{each helpGroups group}}
     <div class="group">
-      <div class="group-header">
-        <div class="group-dot" style="background:{{group.color}}"></div>
-        <span class="group-name">{{group.group}}</span>
-        <span class="group-count">{{group.list.length}} 条</span>
+      <div class="group-header" style="background: {{group.color}}18;">
+        <div class="group-icon" style="background:{{group.color}}22; color:{{group.color}};">
+          {{group.idx + 1}}
+        </div>
+        <span class="group-label" style="color:{{group.color}};">{{group.group}}</span>
+        <span class="group-count">{{group.list.length}}</span>
       </div>
       <div class="cmd-list">
         {{each group.list cmd}}
         <div class="cmd-row">
-          <span class="cmd-name">{{cmd.title}}</span>
-          <div class="cmd-sep"></div>
+          <span class="cmd-name" style="color:{{group.color}}; background:{{group.color}}14;">{{cmd.title}}</span>
           <span class="cmd-desc">{{cmd.desc}}</span>
         </div>
         {{/each}}
@@ -185,8 +238,8 @@ body {
   </div>
 
   <div class="footer">
-    <span class="footer-tip">#ngl帮助 查看此图</span>
-    <span>NapCat-GL · TRSS-Yunzai</span>
+    <span class="footer-cmd">#ngl帮助</span>
+    <span>NapCat-GL · github.com/zhisiluo/Napcat_GL</span>
   </div>
 
 </div>

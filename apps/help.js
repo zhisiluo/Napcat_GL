@@ -118,6 +118,7 @@ export class NglHelp extends plugin {
       const groups = HELP_GROUPS.map((g, i) => ({
         ...g,
         color: COLORS[i % COLORS.length],
+        idx: i,
       }))
 
       const img = await puppeteer.screenshot('ngl/help', {
