@@ -21,48 +21,48 @@ export class NapcatBackup extends plugin {
   async createBackup(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl备份\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl备份 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl备份 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.backupConfigDir()
-      e.reply(r.success ? `备份成功: ${r.backupFile}` : `备份失败: ${r.message}`)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `备份成功: ${r.backupFile}` : `备份失败: ${r.message}`)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async listBackups(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl备份列表\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl备份列表 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl备份列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.listBackups()
-      e.reply(r.success ? (r.listing || '无备份文件') : `获取失败: ${r.message}`)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? (r.listing || '无备份文件') : `获取失败: ${r.message}`)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async restoreBackup(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl恢复\s+(\S+)\s+([\w.\-]+\.tar\.gz)$/)
-    if (!m) { e.reply('用法: #ngl恢复 服务器名 文件名.tar.gz'); return true }
+    if (!m) { this.reply('用法: #ngl恢复 服务器名 文件名.tar.gz'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.restoreConfigDir(m[2])
-      e.reply(r.success ? `配置已从 ${m[2]} 恢复（原配置已自动备份）` : (r.stdout || r.message || '恢复失败'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `配置已从 ${m[2]} 恢复（原配置已自动备份）` : (r.stdout || r.message || '恢复失败'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async deleteBackup(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl删除备份\s+(\S+)\s+([\w.\-]+\.tar\.gz)$/)
-    if (!m) { e.reply('用法: #ngl删除备份 服务器名 文件名.tar.gz'); return true }
+    if (!m) { this.reply('用法: #ngl删除备份 服务器名 文件名.tar.gz'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.deletePath(`${client.napcatConfigDir}/../backups/${m[2]}`)
-      e.reply(r.success ? `备份 ${m[2]} 已删除` : (r.stdout || r.message || '删除失败'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `备份 ${m[2]} 已删除` : (r.stdout || r.message || '删除失败'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 }

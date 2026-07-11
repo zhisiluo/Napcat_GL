@@ -25,7 +25,7 @@ export class ServerAdmin extends plugin {
     if (!e.isMaster) return true
     try {
       const servers = await pool.list()
-      if (!servers.length) { e.reply('暂无服务器，使用 #ngl添加服务器 添加'); return true }
+      if (!servers.length) { this.reply('暂无服务器，使用 #ngl添加服务器 添加'); return true }
       const rows = servers.map(s => {
         const cfg = pool.getServerConfig(s.name)
         return [
@@ -36,15 +36,15 @@ export class ServerAdmin extends plugin {
           (cfg?.tags || []).join(',') || '-',
         ]
       })
-      e.reply(renderTable(['服务器', '状态', '实例', '地址', '标签'], rows))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(renderTable(['服务器', '状态', '实例', '地址', '标签'], rows))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async addServer(e) {
     if (!e.isMaster) return true
     const tokens = e.msg.trim().split(/\s+/)
-    if (tokens.length < 5) { e.reply('用法: #ngl添加服务器 名称 host:port 用户名 密码'); return true }
+    if (tokens.length < 5) { this.reply('用法: #ngl添加服务器 名称 host:port 用户名 密码'); return true }
     const [, name, hostport, username, ...rest] = tokens
     const secret = rest.join(' ')
     const colonIdx = hostport.lastIndexOf(':')
@@ -52,25 +52,25 @@ export class ServerAdmin extends plugin {
     const port = colonIdx > 0 ? parseInt(hostport.slice(colonIdx + 1), 10) || 22 : 22
     const isPrivateKey = secret.includes('-----BEGIN') || secret.length > 120
     try {
-      e.reply('正在验证连接...')
+      this.reply('正在验证连接...')
       const result = await pool.add(name, {
         host, port, username,
         password: isPrivateKey ? '' : secret,
         privateKey: isPrivateKey ? secret : '',
       })
-      e.reply(result.success ? `服务器 ${name} 已添加` : `添加失败: [${result.code}] ${result.message}`)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(result.success ? `服务器 ${name} 已添加` : `添加失败: [${result.code}] ${result.message}`)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async deleteServer(e) {
     if (!e.isMaster) return true
     const name = (e.msg.match(/^#ngl删除服务器\s+(\S+)$/) || [])[1]
-    if (!pool.hasServer(name)) { e.reply(`服务器 ${name} 不存在`); return true }
+    if (!pool.hasServer(name)) { this.reply(`服务器 ${name} 不存在`); return true }
     try {
       const r = await pool.remove(name)
-      e.reply(r.success ? `服务器 ${name} 已删除` : `删除失败: [${r.code}] ${r.message}`)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `服务器 ${name} 已删除` : `删除失败: [${r.code}] ${r.message}`)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
@@ -84,30 +84,30 @@ export class ServerAdmin extends plugin {
       const latency = Date.now() - start
       const info = client.getConnectionInfo()
       if (r.success) {
-        e.reply([
+        this.reply([
           `${parsed.server || info.host} 连接正常`,
           `延迟: ${latency}ms`,
           `主机: ${info.host}:${info.port}`,
           `用户: ${info.username}`,
         ].join('\n'))
       } else {
-        e.reply(`连接异常: ${r.message}`)
+        this.reply(`连接异常: ${r.message}`)
       }
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async editServer(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改服务器\s+(\S+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改服务器 名称 key value'); return true }
+    if (!m) { this.reply('用法: #ngl修改服务器 名称 key value'); return true }
     const [, name, key, value] = m
-    if (!pool.hasServer(name)) { e.reply(`服务器 ${name} 不存在`); return true }
+    if (!pool.hasServer(name)) { this.reply(`服务器 ${name} 不存在`); return true }
     const displayValue = key.toLowerCase().includes('password') ? '****' : value
     try {
       const r = await pool.updateConfig(name, key, value)
-      e.reply(r.success ? `已修改 ${name}.${key} = ${displayValue}` : `修改失败: [${r.code}] ${r.message}`)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `已修改 ${name}.${key} = ${displayValue}` : `修改失败: [${r.code}] ${r.message}`)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 }

@@ -29,14 +29,14 @@ export class NapcatPlugin extends plugin {
   async listPlugins(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件列表\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl插件列表 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl插件列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const apiResult = await client.webuiApiGet('/api/Plugin')
       if (apiResult.success) {
         const plugins = Array.isArray(apiResult.data) ? apiResult.data : (apiResult.data?.plugins || [])
-        if (!plugins.length) { e.reply('暂无插件'); return true }
-        e.reply(renderTable(['状态','名称','版本'], plugins.map(p => [
+        if (!plugins.length) { this.reply('暂无插件'); return true }
+        this.reply(renderTable(['状态','名称','版本'], plugins.map(p => [
           p.enabled !== false ? '启用' : '禁用',
           p.name || p.id || 'unknown',
           p.version || '-',
@@ -48,57 +48,57 @@ export class NapcatPlugin extends plugin {
         const ls = await client.executeCommand(`ls -d "${dir}/plugins"/*/ 2>/dev/null || echo ""`)
         if (ls.success && ls.stdout.trim()) {
           const plugins = ls.stdout.trim().split('\n').map(p => p.split('/').filter(Boolean).pop())
-          e.reply(`插件目录 (降级):\n${plugins.map(p => '  ' + p).join('\n')}`)
+          this.reply(`插件目录 (降级):\n${plugins.map(p => '  ' + p).join('\n')}`)
           return true
         }
       }
-      e.reply('无法获取插件列表')
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply('无法获取插件列表')
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async pluginInfo(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件信息\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl插件信息 服务器名 插件ID'); return true }
+    if (!m) { this.reply('用法: #ngl插件信息 服务器名 插件ID'); return true }
     try {
       checkPluginId(m[2])
       const client = await pool.get(m[1])
       const r = await client.webuiApiGet(`/api/Plugin/${m[2]}`)
-      e.reply(r.success ? (typeof r.data === 'string' ? r.data : JSON.stringify(r.data, null, 2)) : (r.message || '获取失败'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? (typeof r.data === 'string' ? r.data : JSON.stringify(r.data, null, 2)) : (r.message || '获取失败'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async enablePlugin(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件启用\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl插件启用 服务器名 插件ID'); return true }
+    if (!m) { this.reply('用法: #ngl插件启用 服务器名 插件ID'); return true }
     try {
       checkPluginId(m[2])
       const client = await pool.get(m[1])
       const r = await client.webuiApiPost(`/api/Plugin/${m[2]}/enable`)
-      e.reply(r.success ? `插件 ${m[2]} 已启用` : (r.message || '启用失败'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `插件 ${m[2]} 已启用` : (r.message || '启用失败'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async disablePlugin(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl插件禁用\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl插件禁用 服务器名 插件ID'); return true }
+    if (!m) { this.reply('用法: #ngl插件禁用 服务器名 插件ID'); return true }
     try {
       checkPluginId(m[2])
       const client = await pool.get(m[1])
       const r = await client.webuiApiPost(`/api/Plugin/${m[2]}/disable`)
-      e.reply(r.success ? `插件 ${m[2]} 已禁用` : (r.message || '禁用失败'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `插件 ${m[2]} 已禁用` : (r.message || '禁用失败'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
   async checkWebUI(e) {
     if (!e.isMaster) return true
     const match = e.msg.match(/^#ngl查看webui\s+(\S+)(\s+key)?$/)
-    if (!match) { e.reply('用法: #ngl查看webui 服务器名 [key]'); return true }
+    if (!match) { this.reply('用法: #ngl查看webui 服务器名 [key]'); return true }
 
     const serverName = match[1]
     const keyOnly    = !!match[2]
@@ -110,13 +110,13 @@ export class NapcatPlugin extends plugin {
       const port  = wCfg.success ? (wCfg.data?.port || 6099) : 6099
       const token = wCfg.success ? wCfg.data?.token : null
       if (keyOnly) {
-        e.reply(token ? `${serverName} WebUI Token:\n${token}` : `${serverName} WebUI Token 未配置`)
+        this.reply(token ? `${serverName} WebUI Token:\n${token}` : `${serverName} WebUI Token 未配置`)
         return true
       }
       const portSt = await client.getPortStatus(port)
 
       if (!portSt.listening) {
-        e.reply(`${serverName} WebUI 未运行\n端口 ${port} 未监听`)
+        this.reply(`${serverName} WebUI 未运行\n端口 ${port} 未监听`)
         return true
       }
       const accounts = await client.listNapCatAccounts()
@@ -127,7 +127,7 @@ export class NapcatPlugin extends plugin {
         accLines.push(`  ${st.running ? '运行中' : '已停止'}  QQ ${acc}`)
       }
 
-      e.reply([
+      this.reply([
         `${serverName} WebUI 运行中`,
         `地址:  http://${info.host}:${port}/webui`,
         `Token: ${token || '(未配置)'}`,
@@ -135,7 +135,7 @@ export class NapcatPlugin extends plugin {
         `账号 (${accs.length}):`,
         ...(accLines.length ? accLines : ['  无账号']),
       ].join('\n'))
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 }

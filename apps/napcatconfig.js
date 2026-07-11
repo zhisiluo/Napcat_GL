@@ -55,28 +55,28 @@ export class NapcatConfig extends plugin {
   async viewGlobalConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看配置\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl查看配置 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl查看配置 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readNapCatGlobalConfig()
-      e.reply(r.success ? JSON.stringify(r.data, null, 2) : r.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? JSON.stringify(r.data, null, 2) : r.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async editGlobalConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改配置\s+(\S+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改配置 服务器名 key value'); return true }
+    if (!m) { this.reply('用法: #ngl修改配置 服务器名 key value'); return true }
     const [, serverName, key, value] = m
     try {
       const client = await pool.get(serverName)
       const r = await client.readNapCatGlobalConfig()
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeNapCatGlobalConfig(obj, r.path)
-      e.reply(w.success ? `${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(w.success ? `${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
@@ -84,9 +84,9 @@ export class NapcatConfig extends plugin {
     if (!e.isMaster) return true
     try {
       const servers = await pool.list()
-      if (!servers.length) { e.reply('暂无服务器'); return true }
+      if (!servers.length) { this.reply('暂无服务器'); return true }
       const online = servers.filter(s => s.connected)
-      if (!online.length) { e.reply('暂无在线服务器'); return true }
+      if (!online.length) { this.reply('暂无在线服务器'); return true }
 
       const rows = []
       for (const s of online) {
@@ -105,124 +105,124 @@ export class NapcatConfig extends plugin {
           rows.push([s.name, '-', err.message])
         }
       }
-      e.reply(renderTable(['服务器', 'QQ', '状态'], rows))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(renderTable(['服务器', 'QQ', '状态'], rows))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async viewAccountConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看账号配置\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl查看账号配置 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl查看账号配置 服务器名 QQ'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readNapCatAccountConfig(m[2])
-      e.reply(r.success ? JSON.stringify(r.data, null, 2) : r.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? JSON.stringify(r.data, null, 2) : r.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async viewWebUI(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看WebUI\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl查看WebUI 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl查看WebUI 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readWebUIConfig()
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const d = { ...r.data }
       if (d.token) d.token = d.token.length > 8 ? d.token.slice(0,4)+'****'+d.token.slice(-4) : '****'
-      e.reply(JSON.stringify(d, null, 2))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(JSON.stringify(d, null, 2))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async editWebUI(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改WebUI\s+(\S+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改WebUI 服务器名 key value'); return true }
+    if (!m) { this.reply('用法: #ngl修改WebUI 服务器名 key value'); return true }
     const [, serverName, key, value] = m
-    if (['token','totpSecret'].includes(key)) { e.reply(`${key} 为敏感字段，请手动编辑`); return true }
+    if (['token','totpSecret'].includes(key)) { this.reply(`${key} 为敏感字段，请手动编辑`); return true }
     try {
       const client = await pool.get(serverName)
       const r = await client.readWebUIConfig()
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeWebUIConfig(obj, r.path)
       client.clearWebUIToken()
-      e.reply(w.success ? `WebUI ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(w.success ? `WebUI ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async editAccountConfig(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改账号配置\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改账号配置 服务器名 QQ key value'); return true }
+    if (!m) { this.reply('用法: #ngl修改账号配置 服务器名 QQ key value'); return true }
     const [, serverName, qq, key, value] = m
     try {
       const client = await pool.get(serverName)
       const r = await client.readNapCatAccountConfig(qq)
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeNapCatAccountConfig(qq, obj, r.path)
-      e.reply(w.success ? `QQ ${qq} ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(w.success ? `QQ ${qq} ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async viewOB11Config(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl查看OB11\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl查看OB11 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl查看OB11 服务器名 QQ'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.readOB11Config(m[2])
-      e.reply(r.success ? JSON.stringify(r.data, null, 2) : r.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? JSON.stringify(r.data, null, 2) : r.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
   async editOB11Config(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl修改OB11\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)
-    if (!m) { e.reply('用法: #ngl修改OB11 服务器名 QQ key value'); return true }
+    if (!m) { this.reply('用法: #ngl修改OB11 服务器名 QQ key value'); return true }
     const [, serverName, qq, key, value] = m
     try {
       const client = await pool.get(serverName)
       const r = await client.readOB11Config(qq)
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeOB11Config(qq, obj, r.path)
-      e.reply(w.success ? `QQ ${qq} OB11 ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(w.success ? `QQ ${qq} OB11 ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async listConfigFiles(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl配置文件列表\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl配置文件列表 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl配置文件列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.listConfigFiles()
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const lines = r.listing.split('\n')
         .filter(l => l.trim() && !l.startsWith('total'))
         .map(l => { const p = l.trim().split(/\s+/); return p.length >= 9 ? `${p[4].padEnd(6)} ${p[5]} ${p[6]} ${p[7].padEnd(5)} ${p.slice(8).join(' ')}` : l })
-      e.reply(lines.length ? `配置目录:\n${lines.join('\n')}` : '配置目录为空')
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(lines.length ? `配置目录:\n${lines.join('\n')}` : '配置目录为空')
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async showConfigDir(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl配置目录\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl配置目录 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl配置目录 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const wp = await client.getWebUIPort()
-      e.reply(`配置: ${client.getConfigDir()}\nWebUI 端口: ${wp}`)
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(`配置: ${client.getConfigDir()}\nWebUI 端口: ${wp}`)
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 }

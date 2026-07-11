@@ -23,11 +23,11 @@ export class NapcatSystem extends plugin {
   async systemInfo(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl系统信息\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl系统信息 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl系统信息 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.getSystemInfo()
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const i = r.info
       const rows = [
         ['CPU',   `${i['CPU%'] || i.CPU || '-'}%`],
@@ -38,55 +38,55 @@ export class NapcatSystem extends plugin {
         ['OS',    i.OS     || '-'],
         ['UP',    i.UPTIME || '-'],
       ]
-      e.reply(renderTable(['项目', '值'], rows))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(renderTable(['项目', '值'], rows))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async versionInfo(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl版本\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl版本 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl版本 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const [ver, installed] = await Promise.all([
         client.getNapCatVersion(),
         client.isNapCatInstalled(),
       ])
-      e.reply([
+      this.reply([
         `服务器: ${m[1]}`,
         `安装: ${installed ? '是' : '否'}`,
         `版本: ${ver.success ? ver.version : '未知'}`,
         `路径: ${client.napcatBasePath}`,
         `配置: ${client.getConfigDir()}`,
       ].join('\n'))
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async processInfo(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl进程\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl进程 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl进程 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.getNapCatProcesses()
-      if (!r.success || !r.running) { e.reply(r.message || '无 NapCat 进程'); return true }
+      if (!r.success || !r.running) { this.reply(r.message || '无 NapCat 进程'); return true }
       const rows = r.processes.map(p => [
         p.pid,
         `${p.cpu}%`,
         `${p.mem}%`,
         p.command.length > 40 ? p.command.slice(0, 40) + '...' : p.command,
       ])
-      e.reply(renderTable(['PID', 'CPU', 'MEM', '命令'], rows))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(renderTable(['PID', 'CPU', 'MEM', '命令'], rows))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async serviceStatus(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl服务状态\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl服务状态 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl服务状态 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const [accounts, processes] = await Promise.all([
@@ -114,24 +114,24 @@ export class NapcatSystem extends plugin {
         }
       }
 
-      e.reply(lines.join('\n'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(lines.join('\n'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async listLogFiles(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl日志文件\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl日志文件 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl日志文件 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const r = await client.listLogFiles()
-      if (!r.success) { e.reply(r.message); return true }
+      if (!r.success) { this.reply(r.message); return true }
       const lines = r.listing.split('\n')
         .filter(l => l.trim() && !l.startsWith('total'))
         .map(l => { const p = l.trim().split(/\s+/); return p.length >= 9 ? `${p[4].padEnd(6)}  ${p.slice(7).join(' ')}` : l })
-      e.reply(lines.length ? `日志文件:\n${lines.join('\n')}` : '无日志文件')
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(lines.length ? `日志文件:\n${lines.join('\n')}` : '无日志文件')
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 }

@@ -22,14 +22,14 @@ export class ConfigSync extends plugin {
   async syncConfig(e) {
     if (!e.isMaster) return true
     const match = e.msg.match(/^#ngl同步配置\s+(\S+)\s+(\S+)$/)
-    if (!match) { e.reply('用法: #ngl同步配置 源服务器 目标服务器'); return true }
+    if (!match) { this.reply('用法: #ngl同步配置 源服务器 目标服务器'); return true }
 
     const [, src, dst] = match
-    if (src === dst) { e.reply('源服务器和目标服务器不能相同'); return true }
+    if (src === dst) { this.reply('源服务器和目标服务器不能相同'); return true }
 
     let localPath = ''
     try {
-      e.reply(`正在从 ${src} 同步配置到 ${dst}...`)
+      this.reply(`正在从 ${src} 同步配置到 ${dst}...`)
 
       const [srcClient, dstClient] = await Promise.all([pool.get(src), pool.get(dst)])
       const tarName     = `napcat_sync_${Date.now()}.tar.gz`
@@ -38,20 +38,20 @@ export class ConfigSync extends plugin {
         `cd "${srcClient.napcatConfigDir}/.." && tar -czf "${srcTmpPath}" config/ 2>&1 && echo "TAR_OK" || echo "TAR_FAIL"`
       )
       if (!tarResult.stdout?.includes('TAR_OK')) {
-        e.reply(`打包源配置失败: ${tarResult.stderr || tarResult.stdout}`)
+        this.reply(`打包源配置失败: ${tarResult.stderr || tarResult.stdout}`)
         return true
       }
       localPath = path.join(os.tmpdir(), tarName)
       const dl = await srcClient.downloadFile(srcTmpPath, localPath)
       if (!dl.success) {
-        e.reply(`下载配置失败: ${dl.message}`)
+        this.reply(`下载配置失败: ${dl.message}`)
         await srcClient.deletePath(srcTmpPath)
         return true
       }
       const dstTmpPath = `/tmp/${tarName}`
       const ul = await dstClient.uploadFile(localPath, dstTmpPath)
       if (!ul.success) {
-        e.reply(`上传配置到目标失败: ${ul.message}`)
+        this.reply(`上传配置到目标失败: ${ul.message}`)
         fs.unlinkSync(localPath)
         await srcClient.deletePath(srcTmpPath)
         return true
@@ -62,7 +62,7 @@ export class ConfigSync extends plugin {
         30000
       )
       if (!restore.stdout?.includes('RESTORE_OK')) {
-        e.reply(`恢复配置失败: ${restore.stderr || restore.stdout}\n目标服务器原配置已自动备份`)
+        this.reply(`恢复配置失败: ${restore.stderr || restore.stdout}\n目标服务器原配置已自动备份`)
         fs.unlinkSync(localPath)
         await srcClient.deletePath(srcTmpPath)
         await dstClient.deletePath(dstTmpPath)
@@ -76,7 +76,7 @@ export class ConfigSync extends plugin {
       await srcClient.deletePath(srcTmpPath)
       await dstClient.deletePath(dstTmpPath)
 
-      e.reply([
+      this.reply([
         `配置同步完成!`,
         `源:   ${src}`,
         `目标: ${dst}`,
@@ -85,7 +85,7 @@ export class ConfigSync extends plugin {
 
     } catch (err) {
       if (localPath) cleanTempFile(localPath)
-      e.reply(formatError(err))
+      this.reply(formatError(err))
     }
     return true
   }

@@ -26,72 +26,72 @@ export class NapcatManager extends plugin {
     try {
       if (!parsed.server) {
         const servers = await pool.list()
-        if (!servers.length) { e.reply('暂无服务器'); return true }
+        if (!servers.length) { this.reply('暂无服务器'); return true }
         const rows = servers.map(s => [
           s.name,
           s.connected ? '在线' : (s.error || '离线'),
           String(s.instances),
           (s.accounts || []).join(' ') || '-',
         ])
-        e.reply(renderTable(['服务器', '状态', '实例', '账号'], rows))
+        this.reply(renderTable(['服务器', '状态', '实例', '账号'], rows))
       } else if (parsed.server === 'all') {
         const servers = await pool.list()
         const online = servers.filter(s => s.connected)
-        if (!online.length) { e.reply('暂无在线服务器'); return true }
+        if (!online.length) { this.reply('暂无在线服务器'); return true }
         const rows = online.map(s => [s.name, String(s.instances), (s.accounts || []).join(' ') || '-'])
-        e.reply(renderTable(['名称', '实例', '账号'], rows))
+        this.reply(renderTable(['名称', '实例', '账号'], rows))
       } else {
         const client = await pool.get(parsed.server)
         const qq = parsed.params[0]
         const r = await client.napcatStatus(qq)
-        e.reply(r.success ? (r.stdout || '无运行中的实例') : (r.stdout || r.stderr || r.message || '查询失败'))
+        this.reply(r.success ? (r.stdout || '无运行中的实例') : (r.stdout || r.stderr || r.message || '查询失败'))
       }
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async napcatAction(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl(启动|停止|重启|日志)\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl启动|停止|重启|日志 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl启动|停止|重启|日志 服务器名 QQ'); return true }
     const [, action, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
       if (action === '日志') return this._handleLog(e, client, qq)
       const actionMap = { '启动': 'startInstance', '停止': 'stopInstance', '重启': 'restartInstance' }
       const method = actionMap[action]
-      if (!method) { e.reply(`不支持的操作: ${action}`); return true }
+      if (!method) { this.reply(`不支持的操作: ${action}`); return true }
       const r = await client[method](qq)
-      e.reply(r && r.success ? `QQ ${qq} ${action}: ${r.stdout || '完成'}` : parseNapcatError(r, qq, serverName))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r && r.success ? `QQ ${qq} ${action}: ${r.stdout || '完成'}` : parseNapcatError(r, qq, serverName))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async napcatKill(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl强制停止\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl强制停止 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl强制停止 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
       const r = await client.napcatKill(qq)
-      e.reply(r.success ? `QQ ${qq} 已强制终止` : parseNapcatError(r, qq, serverName))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `QQ ${qq} 已强制终止` : parseNapcatError(r, qq, serverName))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async napcatUpdate(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl更新\s+(\S+)$/)
-    if (!m) { e.reply('用法: #ngl更新 服务器名'); return true }
+    if (!m) { this.reply('用法: #ngl更新 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
       const mode = await client.detectProcessMode()
       const r = mode === 'docker'
         ? await client.executeCommand('docker pull mlikiowa/napcat-docker:latest 2>&1')
         : await client.napcatUpdate()
-      e.reply(r.success ? `更新完成:\n${r.stdout}` : (r.stdout || r.stderr || r.message || '更新失败'))
-    } catch (err) { e.reply(formatError(err)) }
+      this.reply(r.success ? `更新完成:\n${r.stdout}` : (r.stdout || r.stderr || r.message || '更新失败'))
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
@@ -103,18 +103,18 @@ export class NapcatManager extends plugin {
       if (stopped) return
       cleanup()
       const lines = buf.join('').split('\n').filter(l => l.trim()).slice(-100)
-      e.reply(lines.join('\n') || `QQ ${qq} 无日志`)
+      this.reply(lines.join('\n') || `QQ ${qq} 无日志`)
     }, TIMEOUT)
     try {
       client.getLogStream(qq,
         d => buf.push(d),
-        err => { cleanup(); clearTimeout(timer); e.reply(`日志错误: ${err}`) },
-        () => { if (!stopped) { cleanup(); clearTimeout(timer); const lines = buf.join('').split('\n').filter(l => l.trim()).slice(-100); e.reply(lines.join('\n') || `QQ ${qq} 无日志`) } }
+        err => { cleanup(); clearTimeout(timer); this.reply(`日志错误: ${err}`) },
+        () => { if (!stopped) { cleanup(); clearTimeout(timer); const lines = buf.join('').split('\n').filter(l => l.trim()).slice(-100); this.reply(lines.join('\n') || `QQ ${qq} 无日志`) } }
       )
     } catch (err) {
       clearTimeout(timer)
       try { cleanup() } catch {}
-      e.reply(formatError(err))
+      this.reply(formatError(err))
     }
     return true
   }

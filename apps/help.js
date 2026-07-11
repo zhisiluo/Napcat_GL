@@ -131,13 +131,13 @@ export class NglHelp extends plugin {
       })
 
       if (img) {
-        e.reply(img)
+        this.reply(img)
       } else {
-        e.reply('图片生成失败，请检查 puppeteer 是否正常运行')
+        this.reply('图片生成失败，请检查 puppeteer 是否正常运行')
       }
     } catch (err) {
       logger.error('[ngl-help] 渲染失败:', err)
-      e.reply(`帮助图片渲染失败: ${err.message}`)
+      this.reply(`帮助图片渲染失败: ${err.message}`)
     }
     return true
   }

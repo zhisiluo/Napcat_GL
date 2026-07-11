@@ -28,37 +28,37 @@ export class AccountManager extends plugin {
   async quickDeploy(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl快速部署\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl快速部署 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl快速部署 服务器名 QQ'); return true }
     const [, serverName] = m
     try {
       const client = await pool.get(serverName)
       const installed = await this._ensureInstalled(e, client, serverName)
       if (!installed) return true
       return this.createAccount(e)
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async createAccount(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl创建账号\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl创建账号 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl创建账号 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
-      e.reply('正在等待二维码...')
+      this.reply('正在等待二维码...')
       await sleep(4000)
       await this._sendQRCode(e, client, qq, serverName)
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async reQRCode(e) {
     if (!e.isMaster) return true
     const m = e.msg.match(/^#ngl重新扫码\s+(\S+)\s+(\d+)$/)
-    if (!m) { e.reply('用法: #ngl重新扫码 服务器名 QQ'); return true }
+    if (!m) { this.reply('用法: #ngl重新扫码 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
@@ -67,16 +67,16 @@ export class AccountManager extends plugin {
       let r = await client.getQQQRCode(tmpFile)
 
       if (!r.success) {
-        e.reply('未检测到二维码，正在重启进程重新生成...')
+        this.reply('未检测到二维码，正在重启进程重新生成...')
         await client.stopInstance(qq)
         await sleep(2000)
         const startR = await client.startInstance(qq)
         if (!startR.success) {
-          e.reply(parseNapcatError(startR, qq, serverName))
+          this.reply(parseNapcatError(startR, qq, serverName))
           return true
         }
 
-        e.reply('正在等待新二维码生成...')
+        this.reply('正在等待新二维码生成...')
         let got = false
         for (let i = 0; i < 10; i++) {
           await sleep(2000)
@@ -84,31 +84,31 @@ export class AccountManager extends plugin {
           if (r.success) { got = true; break }
         }
         if (!got) {
-          e.reply('未能获取到新二维码，请检查 NapCat 是否正常运行')
+          this.reply('未能获取到新二维码，请检查 NapCat 是否正常运行')
           return true
         }
       }
 
       try {
         const buf = fs.readFileSync(tmpFile)
-        e.reply(segment.image(buf))
-        e.reply(`QQ ${qq} 新二维码已发送，请扫码（3分钟内有效）`)
+        this.reply(segment.image(buf))
+        this.reply(`QQ ${qq} 新二维码已发送，请扫码（3分钟内有效）`)
       } finally {
         cleanTempFile(tmpFile)
       }
       this._monitorLogin(e, client, qq, serverName)
-    } catch (err) { e.reply(formatError(err)) }
+    } catch (err) { this.reply(formatError(err)) }
     return true
   }
 
   async _ensureInstalled(e, client, serverName) {
     if (await client.isNapCatInstalled()) return true
 
-    e.reply(`${serverName} 未安装 NapCat，正在自动安装（约1-2分钟）...`)
+    this.reply(`${serverName} 未安装 NapCat，正在自动安装（约1-2分钟）...`)
     const osCheck = await client.executeCommand(OS_CHECK_CMD)
     const osName = osCheck.success ? osCheck.stdout.trim() : 'unknown'
     if (/CentOS.*[78]/.test(osName)) {
-      e.reply(`不支持的系统: ${osName}（需要 Ubuntu 18+ / Debian 10+ / CentOS 9+）`)
+      this.reply(`不支持的系统: ${osName}（需要 Ubuntu 18+ / Debian 10+ / CentOS 9+）`)
       return false
     }
     await client.executeCommand(DEP_INSTALL_CMD, 60000)
@@ -119,7 +119,7 @@ export class AccountManager extends plugin {
 
     if (!(await client.isNapCatInstalled())) {
       const lines = filterInstallOutput(ir.stdout || ir.stderr || '')
-      e.reply(`自动安装失败:\n${lines || '未知错误'}`)
+      this.reply(`自动安装失败:\n${lines || '未知错误'}`)
       return false
     }
     const detected = await client.detectNapCatPath()
@@ -128,7 +128,7 @@ export class AccountManager extends plugin {
       client.napcatConfigDir = `${detected}/config`
       client._clearDetectedDirs()
     }
-    e.reply(`${serverName} NapCat 安装完成`)
+    this.reply(`${serverName} NapCat 安装完成`)
     return true
   }
 
@@ -139,21 +139,21 @@ export class AccountManager extends plugin {
     if (alreadyExists) {
       const running = await client.isNapCatRunning(qq)
       if (running.running) {
-        e.reply(`QQ ${qq} 正在运行，停止旧进程（保留配置）...`)
+        this.reply(`QQ ${qq} 正在运行，停止旧进程（保留配置）...`)
         await client.stopInstance(qq)
         for (let i = 0; i < 5; i++) {
           await sleep(1000)
           if (!(await client.isNapCatRunning(qq)).running) break
         }
       } else {
-        e.reply(`QQ ${qq} 已配置（未运行），复用现有配置启动...`)
+        this.reply(`QQ ${qq} 已配置（未运行），复用现有配置启动...`)
       }
     } else {
       const globalCfg = await client.readNapCatGlobalConfig()
       const baseConfig = (globalCfg.success && globalCfg.data) ? globalCfg.data : {}
       const writeResult = await client.writeNapCatAccountConfig(qq, { ...baseConfig, fileLog: true, consoleLog: true })
       if (!writeResult.success) {
-        e.reply(`创建配置文件失败: ${writeResult.message}`)
+        this.reply(`创建配置文件失败: ${writeResult.message}`)
         return false
       }
       try {
@@ -164,7 +164,7 @@ export class AccountManager extends plugin {
 
     const startR = await client.startInstance(qq)
     if (!startR.success) {
-      e.reply(parseNapcatError(startR, qq, serverName))
+      this.reply(parseNapcatError(startR, qq, serverName))
       return false
     }
 
@@ -177,12 +177,12 @@ export class AccountManager extends plugin {
       const r = await client.getQQQRCode(tmpFile)
       if (r.success) {
         const buf = fs.readFileSync(tmpFile)
-        e.reply(segment.image(buf))
-        e.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
+        this.reply(segment.image(buf))
+        this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
 
         this._monitorLogin(e, client, qq, serverName)
       } else {
-        e.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
+        this.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
       }
     } finally {
       cleanTempFile(tmpFile)
@@ -205,7 +205,7 @@ export class AccountManager extends plugin {
       try {
         const qrExists = await client.fileExists(qrPath)
         if (!qrExists) {
-          e.reply(`QQ ${qq} 登录成功`)
+          this.reply(`QQ ${qq} 登录成功`)
           return
         }
 
@@ -219,8 +219,8 @@ export class AccountManager extends plugin {
               const qrR = await client.getQQQRCode(tmpFile)
               if (qrR.success) {
                 const buf = fs.readFileSync(tmpFile)
-                e.reply(segment.image(buf))
-                e.reply(`QQ ${qq} 二维码已刷新，请重新扫码（3分钟内有效）`)
+                this.reply(segment.image(buf))
+                this.reply(`QQ ${qq} 二维码已刷新，请重新扫码（3分钟内有效）`)
               }
             } finally {
               cleanTempFile(tmpFile)
@@ -230,12 +230,12 @@ export class AccountManager extends plugin {
 
         const running = await client.isNapCatRunning(qq)
         if (!running.running) {
-          e.reply(`QQ ${qq} 进程已退出，请检查后重试`)
+          this.reply(`QQ ${qq} 进程已退出，请检查后重试`)
           return
         }
       } catch (err) { logger.warn(`[ngl] 监控轮询异常: ${err.message}`) }
     }
 
-    e.reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+    this.reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
   }
 }
