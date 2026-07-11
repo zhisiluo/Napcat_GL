@@ -195,53 +195,53 @@ export class AccountManager extends plugin {
   }
 
   async _monitorLogin(e, client, qq, serverName) {
-    const reply = msg => { try { e.reply(msg) } catch {} }
     const qrPath = `${client.napcatBasePath}/cache/qrcode.png`
     const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
+
+    logger.info(`[ngl] 开始监控 QQ ${qq} 登录, qrPath=${qrPath}, maxPolls=${maxPolls}`)
 
     let startMtime = '0'
     try {
       const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
       startMtime = (r.stdout || '').trim() || '0'
-    } catch { startMtime = '0' }
+      logger.info(`[ngl] QQ ${qq} 初始 mtime=${startMtime}`)
+    } catch (err) {
+      logger.warn(`[ngl] QQ ${qq} 获取初始mtime失败: ${err.message}`)
+    }
 
     for (let i = 0; i < maxPolls; i++) {
       await sleep(POLL_INTERVAL)
 
       try {
         const qrExists = await client.fileExists(qrPath)
+        logger.info(`[ngl] QQ ${qq} 轮询 ${i+1}/${maxPolls}: qrExists=${qrExists}, mtime=${startMtime}`)
+
         if (!qrExists) {
-          reply(`QQ ${qq} 登录成功`)
+          e.reply(`QQ ${qq} 登录成功`)
+          logger.info(`[ngl] QQ ${qq} 登录成功 (QR文件消失)`)
           return
         }
 
-        if (startMtime !== '0') {
-          const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
-          const cur = (r.stdout || '').trim()
-          if (cur && cur !== '0' && cur !== startMtime) {
-            startMtime = cur
-            const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_refresh_${Date.now()}.png`)
-            try {
-              const qrR = await client.getQQQRCode(tmpFile)
-              if (qrR.success) {
-                const buf = fs.readFileSync(tmpFile)
-                reply(segment.image(buf))
-                reply(`QQ ${qq} 二维码已过期\n请重新获取: #ngl重新扫码 ${serverName} ${qq}`)
-              }
-            } finally {
-              cleanTempFile(tmpFile)
-            }
-          }
+        const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
+        const cur = (r.stdout || '').trim()
+        if (cur && cur !== '0' && cur !== startMtime) {
+          startMtime = cur
+          logger.info(`[ngl] QQ ${qq} 二维码已更新, 新mtime=${cur}`)
+          e.reply(`QQ ${qq} 二维码已过期\n请重新获取: #ngl重新扫码 ${serverName} ${qq}`)
         }
 
         const running = await client.isNapCatRunning(qq)
         if (!running.running) {
-          reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
+          e.reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
+          logger.info(`[ngl] QQ ${qq} 进程已退出`)
           return
         }
-      } catch (err) { logger.warn(`[ngl] 监控轮询异常: ${err.message}`) }
+      } catch (err) {
+        logger.warn(`[ngl] QQ ${qq} 轮询异常: ${err.message}`)
+      }
     }
 
-    reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+    e.reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+    logger.info(`[ngl] QQ ${qq} 监控超时结束`)
   }
 }
