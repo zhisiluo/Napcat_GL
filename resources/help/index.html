@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NapCat GL 帮助</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  width: 1000px;
+  background: linear-gradient(160deg, #0d1117 0%, #161b22 60%, #0d1117 100%);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  color: #c9d1d9;
+  padding: 0;
+}
+
+#container {
+  padding: 28px 28px 20px;
+}
+
+/* ── 顶部标题 ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 22px;
+}
+.header-logo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #58a6ff, #3fb950);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+.header-text .title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #f0f6fc;
+  letter-spacing: 1px;
+}
+.header-text .sub {
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 3px;
+}
+.header-badge {
+  margin-left: auto;
+  background: rgba(88,166,255,0.12);
+  border: 1px solid rgba(88,166,255,0.3);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 12px;
+  color: #58a6ff;
+}
+
+/* ── 分组 ── */
+.groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.group {
+  background: rgba(22,27,34,0.8);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.group-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+.group-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: #8b949e;
+  background: rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+/* ── 命令列表 ── */
+.cmd-list {
+  padding: 8px 6px;
+}
+.cmd-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+.cmd-row:hover { background: rgba(255,255,255,0.04); }
+.cmd-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #79c0ff;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cmd-sep {
+  width: 1px;
+  height: 10px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+  align-self: center;
+}
+.cmd-desc {
+  font-size: 11px;
+  color: #8b949e;
+  line-height: 1.4;
+}
+
+/* ── 底部 ── */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 11px;
+  color: #484f58;
+}
+.footer-tip {
+  color: #6e7681;
+}
+</style>
+</head>
+<body>
+<div id="container">
+
+  <div class="header">
+    <div class="header-logo">N</div>
+    <div class="header-text">
+      <div class="title">NapCat GL 管理插件</div>
+      <div class="sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
+    </div>
+    <div class="header-badge">v{{version}}</div>
+  </div>
+
+  <div class="groups">
+    {{each helpGroups group}}
+    <div class="group">
+      <div class="group-header">
+        <div class="group-dot" style="background:{{group.color}}"></div>
+        <span class="group-name">{{group.group}}</span>
+        <span class="group-count">{{group.list.length}} 条</span>
+      </div>
+      <div class="cmd-list">
+        {{each group.list cmd}}
+        <div class="cmd-row">
+          <span class="cmd-name">{{cmd.title}}</span>
+          <div class="cmd-sep"></div>
+          <span class="cmd-desc">{{cmd.desc}}</span>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+
+  <div class="footer">
+    <span class="footer-tip">#ngl帮助 查看此图</span>
+    <span>NapCat-GL · TRSS-Yunzai</span>
+  </div>
+
+</div>
+</body>
+</html>
