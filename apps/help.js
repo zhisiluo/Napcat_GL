@@ -88,6 +88,8 @@ const HELP_GROUPS = [
   {
     group: '插件与同步',
     list: [
+      { title: '#ngl插件更新',                    desc: '更新 NapCat GL 插件' },
+      { title: '#ngl插件强制更新',                desc: '强制更新插件（丢弃修改）' },
       { title: '#ngl插件列表 <服务器>',          desc: '插件列表（需 WebUI）' },
       { title: '#ngl插件信息 <服务器> <ID>',     desc: '插件详情' },
       { title: '#ngl插件启用 <服务器> <ID>',     desc: '启用插件' },
