@@ -15,7 +15,6 @@ export class ServerAdmin extends plugin {
         { reg: '^#ngl服务器列表$', fnc: 'listServers', permission: 'master' },
         { reg: '^#ngl添加服务器\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S', fnc: 'addServer', permission: 'master' },
         { reg: '^#ngl删除服务器\\s+(\\S+)$', fnc: 'deleteServer', permission: 'master' },
-        { reg: '^#ngl切换\\s+(\\S+)$', fnc: 'switchServer', permission: 'master' },
         { reg: '^#ngl测试\\s+(\\S+)$', fnc: 'testServer', permission: 'master' },
         { reg: '^#ngl修改服务器\\s+(\\S+)\\s+(\\S+)\\s+(.+)$', fnc: 'editServer', permission: 'master' },
       ]
@@ -78,16 +77,6 @@ export class ServerAdmin extends plugin {
     try {
       const r = await pool.remove(name)
       e.reply(r.success ? `服务器 ${name} 已删除` : `删除失败: [${r.code}] ${r.message}`)
-    } catch (err) { e.reply(formatError(err)) }
-    return true
-  }
-
-  async switchServer(e) {
-    if (!e.isMaster) return true
-    const name = (e.msg.match(/^#ngl切换\s+(\S+)$/) || [])[1]
-    try {
-      const r = await pool.setDefault(name)
-      e.reply(r.success ? `已切换默认服务器 → ${name}` : `切换失败: [${r.code}] ${r.message}`)
     } catch (err) { e.reply(formatError(err)) }
     return true
   }

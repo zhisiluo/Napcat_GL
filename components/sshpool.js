@@ -23,8 +23,12 @@ class SSHClient {
     this.webuiToken = null
     this._connecting = null
 
-    this.napcatBasePath = config.napcatBasePath || '/opt/QQ/resources/app/app_launcher/napcat'
-    this.napcatConfigDir = config.napcatConfigDir || `${this.napcatBasePath}/config`
+    this.napcatBasePath = (config.napcatBasePath && config.napcatBasePath.trim())
+      ? config.napcatBasePath
+      : '/opt/QQ/resources/app/app_launcher/napcat'
+    this.napcatConfigDir = (config.napcatConfigDir && config.napcatConfigDir.trim())
+      ? config.napcatConfigDir
+      : `${this.napcatBasePath}/config`
   }
 
   getConnectionInfo() {
@@ -778,6 +782,18 @@ class ConnectionPool {
       const err = new Error(`服务器 ${name} 连接失败`)
       err.code = 'SRV_OFFLINE'
       throw err
+    }
+
+    // 若 napcatBasePath 未配置，自动检测并持久化
+    if (!serverConfig.napcatBasePath || !serverConfig.napcatBasePath.trim()) {
+      const detected = await client.detectNapCatPath()
+      if (detected) {
+        client.napcatBasePath = detected
+        client.napcatConfigDir = `${detected}/config`
+        this._config.servers[name].napcatBasePath = detected
+        this._config.servers[name].napcatConfigDir = `${detected}/config`
+        try { saveConfig(this._config, this._configPath) } catch {}
+      }
     }
 
     this._clients.set(name, client)

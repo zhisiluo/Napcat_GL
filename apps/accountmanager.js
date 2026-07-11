@@ -1,11 +1,14 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import pool from '../components/sshpool.js'
-import { parseCommand } from '../components/parser.js'
 import { formatError, parseNapcatError } from '../components/errors.js'
 import { segment } from 'oicq'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
+
+// 登录监控：轮询间隔 8s，最长等待 3 分钟
+const POLL_INTERVAL = 8000
+const LOGIN_TIMEOUT = 3 * 60 * 1000
 
 export class AccountManager extends plugin {
   constructor() {
@@ -17,6 +20,7 @@ export class AccountManager extends plugin {
       rule: [
         { reg: '^#ngl快速部署\\s+(\\S+)\\s+(\\d+)$', fnc: 'quickDeploy',   permission: 'master' },
         { reg: '^#ngl创建账号\\s+(\\S+)\\s+(\\d+)$', fnc: 'createAccount', permission: 'master' },
+        { reg: '^#ngl重新扫码\\s+(\\S+)\\s+(\\d+)$', fnc: 'reQRCode',      permission: 'master' },
       ]
     })
   }
@@ -55,7 +59,44 @@ export class AccountManager extends plugin {
     return true
   }
 
-  
+  async reQRCode(e) {
+    if (!e.isMaster) return true
+    const m = e.msg.match(/^#ngl重新扫码\s+(\S+)\s+(\d+)$/)
+    if (!m) { e.reply('用法: #ngl重新扫码 服务器名 QQ'); return true }
+    const [, serverName, qq] = m
+    try {
+      const client = await pool.get(serverName)
+      // 删除旧二维码文件，等 NapCat 自动重新生成
+      await client.executeCommand(
+        `rm -f "${client.napcatBasePath}/cache/qrcode.png" /tmp/napcat/qrcode.png 2>/dev/null; true`
+      )
+      e.reply('正在等待新二维码生成...')
+      // 轮询最多 20 秒
+      let got = false
+      const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 2000))
+        const r = await client.getQQQRCode(tmpFile)
+        if (r.success) { got = true; break }
+      }
+      if (!got) {
+        e.reply('未获取到新二维码，NapCat 可能需要重启。\n手动重启后再次发送本命令。')
+        return true
+      }
+      try {
+        const buf = fs.readFileSync(tmpFile)
+        e.reply(segment.image(buf))
+        e.reply(`QQ ${qq} 新二维码已发送，请扫码（3分钟内有效）`)
+      } finally {
+        try { fs.unlinkSync(tmpFile) } catch {}
+      }
+      this._monitorLogin(e, client, qq, serverName)
+    } catch (err) { e.reply(formatError(err)) }
+    return true
+  }
+
+  // ── 私有方法 ────────────────────────────────────────────────
+
   async _ensureInstalled(e, client, serverName) {
     if (await client.isNapCatInstalled()) return true
 
@@ -97,7 +138,6 @@ export class AccountManager extends plugin {
     return true
   }
 
-  
   async _ensureAccountStarted(e, client, serverName, qq) {
     const accounts    = await client.listNapCatAccounts()
     const alreadyExists = accounts.success && (accounts.accounts || []).includes(qq)
@@ -128,7 +168,7 @@ export class AccountManager extends plugin {
       try {
         const ob11 = await client.readOB11Config('')
         if (ob11.success) await client.writeOB11Config(qq, ob11.data)
-      } catch {  }
+      } catch {}
     }
     const mode = await client.detectProcessMode()
     if (mode === 'wrapper') {
@@ -149,22 +189,83 @@ export class AccountManager extends plugin {
     return true
   }
 
-  
   async _sendQRCode(e, client, qq, serverName) {
-    const tmpDir  = os.tmpdir()
-    const tmpFile = path.join(tmpDir, `napcat_gl_qr_${Date.now()}.png`)
-
+    const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
     try {
       const r = await client.getQQQRCode(tmpFile)
       if (r.success) {
         const buf = fs.readFileSync(tmpFile)
         e.reply(segment.image(buf))
-        e.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录`)
+        e.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
+        // 发完码之后开始监控登录状态
+        this._monitorLogin(e, client, qq, serverName)
       } else {
-        e.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后用 #ngl扫码 ${serverName} 重试`)
+        e.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
       }
     } finally {
       try { fs.unlinkSync(tmpFile) } catch {}
     }
+  }
+
+  /**
+   * 监控登录状态（轮询 qrcode.png）
+   * - qrcode.png 消失 → 登录成功
+   * - qrcode.png mtime 变化 → 二维码已刷新（旧码过期）
+   * - 进程退出 → 异常
+   * - 3分钟超时 → 提示重新扫码
+   */
+  _monitorLogin(e, client, qq, serverName) {
+    let done = false
+    let polls = 0
+    let startMtime = null
+    const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
+    // napcatBasePath 由 pool.get() 保证已检测正确
+    const qrPath = `${client.napcatBasePath}/cache/qrcode.png`
+
+    const finish = (msg) => {
+      if (done) return
+      done = true
+      clearInterval(timer)
+      e.reply(msg)
+    }
+
+    // 记录初始 mtime（非阻塞）
+    client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
+      .then(r => { startMtime = (r.stdout || '').trim() || '0' })
+      .catch(() => { startMtime = '0' })
+
+    const timer = setInterval(async () => {
+      if (done) { clearInterval(timer); return }
+      polls++
+      if (polls > maxPolls) {
+        finish(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+        return
+      }
+      try {
+        const qrExists = await client.fileExists(qrPath)
+        if (!qrExists) {
+          finish(`QQ ${qq} 登录成功`)
+          return
+        }
+
+        // mtime 变化说明二维码已自动刷新（旧码过期）
+        if (startMtime && startMtime !== '0') {
+          const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
+          const cur = (r.stdout || '').trim()
+          if (cur && cur !== '0' && cur !== startMtime) {
+            finish(`二维码已过期（已自动刷新），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+            return
+          }
+        }
+
+        // 进程异常退出
+        const running = await client.isNapCatRunning(qq)
+        if (!running.running) {
+          finish(`QQ ${qq} 进程已退出，请检查后重试`)
+        }
+      } catch {
+        // SSH 短暂抖动，忽略继续下一轮
+      }
+    }, POLL_INTERVAL)
   }
 }

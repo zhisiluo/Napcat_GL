@@ -153,7 +153,6 @@ export class NapcatManager extends plugin {
       'ngl服务器列表',
       'ngl添加服务器 名称 host:port 用户名 密码',
       'ngl删除服务器 名称',
-      'ngl切换 名称',
       'ngl测试 名称',
       'ngl修改服务器 名称 key value',
     ],
@@ -191,7 +190,7 @@ export class NapcatManager extends plugin {
     '账号': [
       'ngl快速部署 服务器名 QQ',
       'ngl创建账号 服务器名 QQ',
-      'ngl扫码 服务器名',
+      'ngl重新扫码 服务器名 QQ',
     ],
     '插件': [
       'ngl插件列表 服务器名',
