@@ -10,7 +10,6 @@ import { validateServerName, validateHost, validatePort } from './validator.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const NO_COLOR = 'TERM=dumb NO_COLOR=1 '
 const DEFAULT_CMD_TIMEOUT = 30000  
-const INSTALL_CMD_TIMEOUT = 120000 
 const stripAnsi = s => (s || '').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
 
 class SSHClient {
@@ -43,13 +42,6 @@ class SSHClient {
 
   getConfigDir() {
     return this.napcatConfigDir
-  }
-
-  loadConfig(config) {
-    this.config = { ...this.config, ...config }
-    if (config.napcatBasePath) this.napcatBasePath = config.napcatBasePath
-    if (config.napcatConfigDir) this.napcatConfigDir = config.napcatConfigDir
-    if (config.webuiPort != null) this.config.webuiPort = config.webuiPort
   }
 
   async connect() {
@@ -589,16 +581,6 @@ class SSHClient {
       .map(s => s.port)
   }
 
-  
-  async getOB11WSPorts(uin) {
-    const r = await this.readOB11Config(uin)
-    if (!r.success || !r.data) return []
-    const servers = r.data?.network?.websocketServers || []
-    return servers
-      .filter(s => s.enable !== false && s.port)
-      .map(s => s.port)
-  }
-
   async getWebUIToken() {
     if (this.webuiToken) return this.webuiToken
     const result = await this.readWebUIConfig()
@@ -643,12 +625,6 @@ class SSHClient {
 
   async webuiApiGet(apiPath) { return this.webuiApiCall('GET', apiPath) }
   async webuiApiPost(apiPath, data) { return this.webuiApiCall('POST', apiPath, data) }
-  async webuiApiPut(apiPath, data) { return this.webuiApiCall('PUT', apiPath, data) }
-
-  async isWebUIRunning() {
-    const result = await this.getPortStatus(this.config.webuiPort || 6099)
-    return result.listening
-  }
 
   async backupConfigDir(backupName = '') {
     const timestamp = backupName || new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').substring(0, 19)
@@ -685,18 +661,6 @@ class SSHClient {
       return { success: true, message: '配置已恢复，原配置已自动备份' }
     }
     return { success: false, message: result.stderr || result.stdout || '恢复失败' }
-  }
-
-  async viewLogFile(logPath, lines = 100) {
-    if (!logPath) logPath = `${this.napcatBasePath}/logs/`
-
-    const isDir = await this.executeCommand(`test -d "${logPath}" && echo "IS_DIR" || echo "IS_FILE"`)
-    if (isDir.stdout && isDir.stdout.includes('IS_DIR')) {
-      logPath = `${logPath}/$(ls -t "${logPath}"/*.log 2>/dev/null | head -1)`
-      if (!logPath || logPath.endsWith('/')) return { success: false, message: '未找到日志文件' }
-    }
-    const result = await this.executeCommand(`tail -n ${lines} "${logPath}" 2>&1`)
-    return result.success ? { success: true, content: result.stdout, path: logPath } : { success: false, message: result.stderr || '无法读取日志文件' }
   }
 
   async listLogFiles() {
@@ -896,26 +860,6 @@ class ConnectionPool {
     return { success: true }
   }
 
-  async setDefault(name) {
-    if (!this._config.servers[name]) {
-      return { success: false, code: 'SRV_NOTFOUND', message: `服务器 ${name} 不存在` }
-    }
-
-    if (this._config.servers[name].disabled) {
-      return { success: false, code: 'SRV_DISABLED', message: `服务器 ${name} 已禁用` }
-    }
-
-    this._config.defaultServer = name
-
-    try {
-      saveConfig(this._config, this._configPath)
-    } catch (err) {
-      return { success: false, code: 'CFG_WRITERR', message: `保存配置失败: ${err.message}` }
-    }
-
-    return { success: true, message: `默认服务器已切换至 ${name}` }
-  }
-
   async updateConfig(name, key, value) {
     if (!this._config.servers[name]) {
       return { success: false, code: 'SRV_NOTFOUND', message: `服务器 ${name} 不存在` }
@@ -998,49 +942,7 @@ class ConnectionPool {
     return results.map(r => r.status === 'fulfilled' ? r.value : { name: 'unknown', connected: false, instances: 0, accounts: [], error: r.reason?.message || 'unknown error' })
   }
 
-  async healthCheckAll() {
-    const online = []
-    const offline = []
-
-    const checks = Object.entries(this._config.servers)
-      .filter(([_, cfg]) => !cfg.disabled)
-      .map(async ([name, serverConfig]) => {
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('timeout')), 5000)
-        )
-
-        const ping = (async () => {
-          const client = new SSHClient(serverConfig)
-          const connected = await client.connect()
-          if (!connected) throw new Error('connect failed')
-          await client.executeCommand('echo ok')
-          await client.disconnect()
-        })().catch(() => {})
-
-        try {
-          await Promise.race([ping, timeout])
-          online.push(name)
-        } catch {
-          offline.push(name)
-        }
-      })
-
-    await Promise.allSettled(checks)
-    return { online, offline }
-  }
-
-  async disconnectAll() {
-    for (const [name, client] of this._clients) {
-      try {
-        await client.disconnect()
-      } catch (err) {
-        console.error(`[WARN] [ngl:pool] 断开 ${name} 时出错:`, err.message)
-      }
-    }
-    this._clients.clear()
-  }
 }
 
 const pool = new ConnectionPool()
 export default pool
-export { ConnectionPool, SSHClient }

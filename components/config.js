@@ -17,7 +17,7 @@ function createEmptyConfig() {
   };
 }
 
-export function getConfigPath(customPath) {
+function getConfigPath(customPath) {
   if (customPath === undefined || customPath === null) {
     return DEFAULT_CONFIG_PATH;
   }
@@ -103,7 +103,7 @@ export function saveConfig(data, configPath) {
   }
 }
 
-export function migrateConfig(raw) {
+function migrateConfig(raw) {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     return createEmptyConfig();
   }
@@ -134,44 +134,3 @@ export function migrateConfig(raw) {
   return data;
 }
 
-export function validateConfig(data) {
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-    return { valid: false, message: '配置数据无效: 必须是一个对象' };
-  }
-
-  if (typeof data.servers !== 'object' || data.servers === null) {
-    return { valid: false, message: '配置数据无效: servers 必须是一个对象' };
-  }
-
-  const serverNames = Object.keys(data.servers);
-  if (serverNames.length === 0) {
-    return { valid: true };
-  }
-  for (const name of serverNames) {
-    const server = data.servers[name];
-
-    if (typeof server !== 'object' || server === null) {
-      return { valid: false, message: `服务器 "${name}" 配置无效: 必须是一个对象` };
-    }
-    if (typeof server.host !== 'string' || server.host.trim().length === 0) {
-      return { valid: false, message: `服务器 "${name}" 配置无效: host 必须是非空字符串` };
-    }
-    if (server.host.length > 255) {
-      return { valid: false, message: `服务器 "${name}" 配置无效: host 长度不能超过 255 个字符` };
-    }
-    if (typeof server.username !== 'string' || server.username.trim().length === 0) {
-      return { valid: false, message: `服务器 "${name}" 配置无效: username 必须是非空字符串` };
-    }
-    if (typeof server.port !== 'number' || !Number.isInteger(server.port) || server.port < 1 || server.port > 65535) {
-      return { valid: false, message: `服务器 "${name}" 配置无效: port 必须是 1-65535 之间的整数` };
-    }
-    const hasPassword = typeof server.password === 'string' && server.password.length > 0;
-    const hasPrivateKey = typeof server.privateKey === 'string' && server.privateKey.length > 0;
-
-    if (!hasPassword && !hasPrivateKey) {
-      return { valid: false, message: `服务器 "${name}" 配置无效: 必须设置 password 或 privateKey` };
-    }
-  }
-
-  return { valid: true };
-}
