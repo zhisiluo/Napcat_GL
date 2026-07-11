@@ -3,6 +3,12 @@ import pool from '../components/sshpool.js'
 import { renderTable } from '../components/table.js'
 import { formatError } from '../components/errors.js'
 
+const VALID_PLUGIN_ID = /^[\w.-]+$/
+
+function checkPluginId(id) {
+  if (!VALID_PLUGIN_ID.test(id)) throw new Error(`非法插件ID: ${id}`)
+}
+
 export class NapcatPlugin extends plugin {
   constructor() {
     super({
@@ -56,6 +62,7 @@ export class NapcatPlugin extends plugin {
     const m = e.msg.match(/^#ngl插件信息\s+(\S+)\s+(.+)$/)
     if (!m) { e.reply('用法: #ngl插件信息 服务器名 插件ID'); return true }
     try {
+      checkPluginId(m[2])
       const client = await pool.get(m[1])
       const r = await client.webuiApiGet(`/api/Plugin/${m[2]}`)
       e.reply(r.success ? (typeof r.data === 'string' ? r.data : JSON.stringify(r.data, null, 2)) : (r.message || '获取失败'))
@@ -68,6 +75,7 @@ export class NapcatPlugin extends plugin {
     const m = e.msg.match(/^#ngl插件启用\s+(\S+)\s+(.+)$/)
     if (!m) { e.reply('用法: #ngl插件启用 服务器名 插件ID'); return true }
     try {
+      checkPluginId(m[2])
       const client = await pool.get(m[1])
       const r = await client.webuiApiPost(`/api/Plugin/${m[2]}/enable`)
       e.reply(r.success ? `插件 ${m[2]} 已启用` : (r.message || '启用失败'))
@@ -80,6 +88,7 @@ export class NapcatPlugin extends plugin {
     const m = e.msg.match(/^#ngl插件禁用\s+(\S+)\s+(.+)$/)
     if (!m) { e.reply('用法: #ngl插件禁用 服务器名 插件ID'); return true }
     try {
+      checkPluginId(m[2])
       const client = await pool.get(m[1])
       const r = await client.webuiApiPost(`/api/Plugin/${m[2]}/disable`)
       e.reply(r.success ? `插件 ${m[2]} 已禁用` : (r.message || '禁用失败'))

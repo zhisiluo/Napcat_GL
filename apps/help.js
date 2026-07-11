@@ -2,10 +2,11 @@ import plugin from '../../../lib/plugins/plugin.js'
 import puppeteer from '../../../lib/puppeteer/puppeteer.js'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { readFileSync } from 'node:fs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tplFile   = path.join(__dirname, '../resources/help/index.html')
-const VERSION   = '2.0.0'
+const VERSION   = JSON.parse(readFileSync(path.join(__dirname, '../package.json'), 'utf8')).version
 
 const COLORS = ['#58a6ff', '#3fb950', '#f78166', '#d2a8ff', '#ffa657', '#79c0ff', '#56d364', '#ff7b72']
 

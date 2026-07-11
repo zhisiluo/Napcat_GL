@@ -22,7 +22,7 @@ const QUERY_ACTIONS = new Set([
 
 function getServerNames(pool) {
   try {
-    return Object.keys(pool._config?.servers || {});
+    return pool.serverNames;
   } catch {
     return [];
   }

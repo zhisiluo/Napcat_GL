@@ -58,8 +58,7 @@ class SSHClient {
         resolve(true)
       })
 
-      this.client.on('error', (err) => {
-        this._lastError = err
+      this.client.on('error', (_err) => {
         this.isConnected = false
         this._connecting = null
         resolve(false)
@@ -223,8 +222,8 @@ class SSHClient {
     assertQQ(qq)
     const mode = await this.detectProcessMode()
     if (mode === 'wrapper') return this.napcatStart(qq)
-    if (mode === 'docker')  return this.executeCommand(`docker start napcat_${qq} 2>&1`)
-    if (mode === 'screen')  return this.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}" 2>&1`)
+    if (mode === 'docker')  return this.executeCommand(`docker start napcat_${qq}`)
+    if (mode === 'screen')  return this.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}"`)
     return this.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
   }
 
@@ -232,16 +231,16 @@ class SSHClient {
     assertQQ(qq)
     const mode = await this.detectProcessMode()
     if (mode === 'wrapper') return this.napcatStop(qq)
-    if (mode === 'docker')  return this.executeCommand(`docker stop napcat_${qq} 2>&1`)
-    return this.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
+    if (mode === 'docker')  return this.executeCommand(`docker stop napcat_${qq}`)
+    return this.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}"`)
   }
 
   async restartInstance(qq) {
     assertQQ(qq)
     const mode = await this.detectProcessMode()
     if (mode === 'wrapper') return this.napcatRestart(qq)
-    if (mode === 'docker')  return this.executeCommand(`docker restart napcat_${qq} 2>&1`)
-    await this.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>&1`)
+    if (mode === 'docker')  return this.executeCommand(`docker restart napcat_${qq}`)
+    await this.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}"`)
     return this.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
   }
 
@@ -736,13 +735,15 @@ class ConnectionPool {
     try {
       this._config = loadConfig(this._configPath) || { _schemaVersion: 1, defaultServer: '', servers: {} }
     } catch (err) {
-      console.error(`[ERROR] [ngl:pool] servers.json 加载失败:`, err.message)
+      logger.error(`[ngl:pool] servers.json 加载失败:`, err.message)
       this._config = { _schemaVersion: 1, defaultServer: '', servers: {} }
     }
   }
 
   hasServer(name)       { return !!this._config.servers?.[name] }
   getServerConfig(name) { return this._config.servers?.[name] ?? null }
+  get serverCount()     { return Object.keys(this._config.servers || {}).length }
+  get serverNames()     { return Object.keys(this._config.servers || {}) }
 
   async get(name) {
     if (name === 'all') name = undefined
@@ -939,11 +940,16 @@ class ConnectionPool {
           }
           try {
             const tempClient = new SSHClient(serverConfig)
+            let timer
             const timeout = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('连接超时')), 5000)
+              timer = setTimeout(() => reject(new Error('连接超时')), 5000)
             )
-            const connected = await Promise.race([tempClient.connect(), timeout])
+            let connected = false
+            try {
+              connected = await Promise.race([tempClient.connect(), timeout])
+            } finally { clearTimeout(timer) }
             if (!connected) {
+              tempClient.disconnect()
               status.error = 'SSH 连接失败'
               return status
             }

@@ -42,7 +42,7 @@ logger.mark(logger.green('[ngl]------NapCat 全局管理器------'))
 logger.mark(logger.green(`[ngl] NapCat GL 插件载入成功~`))
 logger.mark(logger.green(`[ngl] 插件加载耗时: ${loadTime}ms`))
 logger.mark(logger.green(`[ngl] 已加载 ${appCount} 个子插件`))
-const serverCount = Object.keys(pool._config?.servers || {}).length
+const serverCount = pool.serverCount
 logger.mark(logger.green(`[ngl] 管理 ${serverCount} 台服务器`))
 logger.mark(logger.green('[ngl] 欢迎使用 NapCat 全局管理插件！'))
 logger.mark(logger.green('[ngl]-------------------------------'))
