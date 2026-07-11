@@ -76,6 +76,8 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
+      const alreadyOnline = await this._checkAlreadyOnline(e, client, qq, serverName)
+      if (alreadyOnline) return true
       const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
 
       let r = await client.getQQQRCode(tmpFile, qq)
