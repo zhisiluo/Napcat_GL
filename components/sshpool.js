@@ -195,6 +195,9 @@ class SSHClient {
 
   async checkLoginStatus(qq) {
     assertQQ(qq)
+    // 进程必须存活,否则WebUI可能返回旧状态(master进程没死)
+    const running = await this.isNapCatRunning(qq)
+    if (!running.running) return { status: 'offline' }
     try {
       const apiR = await this.webuiApiPost('/api/QQLogin/CheckLoginStatus')
       if (apiR.success && apiR.data) {
@@ -209,8 +212,6 @@ class SSHClient {
     } catch (err) {
       if (typeof logger !== 'undefined') logger.warn(`[ngl] WebUI API QQ ${qq} 调用失败: ${err.message}`)
     }
-    const running = await this.isNapCatRunning(qq)
-    if (!running.running) return { status: 'offline' }
     return { status: 'waiting_qr' }
   }
 
