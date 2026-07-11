@@ -59,7 +59,9 @@ export class NapcatManager extends plugin {
       const client = await pool.get(serverName)
       if (action === '日志') return this._handleLog(e, client, qq)
       const actionMap = { '启动': 'startInstance', '停止': 'stopInstance', '重启': 'restartInstance' }
-      const r = await client[actionMap[action]](qq)
+      const method = actionMap[action]
+      if (!method) { e.reply(`不支持的操作: ${action}`); return true }
+      const r = await client[method](qq)
       e.reply(r && r.success ? `QQ ${qq} ${action}: ${r.stdout || '完成'}` : parseNapcatError(r, qq, serverName))
     } catch (err) { e.reply(formatError(err)) }
     return true

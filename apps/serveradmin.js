@@ -13,7 +13,7 @@ export class ServerAdmin extends plugin {
       priority: 5000,
       rule: [
         { reg: '^#ngl服务器列表$', fnc: 'listServers', permission: 'master' },
-        { reg: '^#ngl添加服务器\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S', fnc: 'addServer', permission: 'master' },
+        { reg: '^#ngl添加服务器\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+', fnc: 'addServer', permission: 'master' },
         { reg: '^#ngl删除服务器\\s+(\\S+)$', fnc: 'deleteServer', permission: 'master' },
         { reg: '^#ngl测试\\s+(\\S+)$', fnc: 'testServer', permission: 'master' },
         { reg: '^#ngl修改服务器\\s+(\\S+)\\s+(\\S+)\\s+(.+)$', fnc: 'editServer', permission: 'master' },

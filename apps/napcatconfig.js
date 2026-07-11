@@ -29,6 +29,11 @@ export class NapcatConfig extends plugin {
   
   setNested(obj, keyPath, value) {
     const keys = keyPath.split('.')
+    for (const k of keys) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') {
+        throw new Error(`非法配置键: ${k}`)
+      }
+    }
     let cur = obj
     for (let i = 0; i < keys.length - 1; i++) {
       if (!cur[keys[i]] || typeof cur[keys[i]] !== 'object') cur[keys[i]] = {}
@@ -44,7 +49,7 @@ export class NapcatConfig extends plugin {
     else if (v === 'null') v = null
     else if (/^-?\d+(\.\d+)?$/.test(v)) v = Number(v)
     cur[last] = v
-    return { obj, old, new: v }
+    return { obj, old, newValue: v }
   }
 
   async viewGlobalConfig(e) {
@@ -68,7 +73,7 @@ export class NapcatConfig extends plugin {
       const client = await pool.get(serverName)
       const r = await client.readNapCatGlobalConfig()
       if (!r.success) { e.reply(r.message); return true }
-      const { obj, old, new: n } = this.setNested(r.data, key, value)
+      const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeNapCatGlobalConfig(obj, r.path)
       e.reply(w.success ? `${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
     } catch (err) { e.reply(formatError(err)) }
@@ -142,7 +147,7 @@ export class NapcatConfig extends plugin {
       const client = await pool.get(serverName)
       const r = await client.readWebUIConfig()
       if (!r.success) { e.reply(r.message); return true }
-      const { obj, old, new: n } = this.setNested(r.data, key, value)
+      const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeWebUIConfig(obj, r.path)
       client.clearWebUIToken()
       e.reply(w.success ? `WebUI ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
@@ -159,7 +164,7 @@ export class NapcatConfig extends plugin {
       const client = await pool.get(serverName)
       const r = await client.readNapCatAccountConfig(qq)
       if (!r.success) { e.reply(r.message); return true }
-      const { obj, old, new: n } = this.setNested(r.data, key, value)
+      const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeNapCatAccountConfig(qq, obj, r.path)
       e.reply(w.success ? `QQ ${qq} ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
     } catch (err) { e.reply(formatError(err)) }
@@ -186,7 +191,7 @@ export class NapcatConfig extends plugin {
       const client = await pool.get(serverName)
       const r = await client.readOB11Config(qq)
       if (!r.success) { e.reply(r.message); return true }
-      const { obj, old, new: n } = this.setNested(r.data, key, value)
+      const { obj, old, newValue: n } = this.setNested(r.data, key, value)
       const w = await client.writeOB11Config(qq, obj, r.path)
       e.reply(w.success ? `QQ ${qq} OB11 ${key}: ${JSON.stringify(old)} → ${JSON.stringify(n)}` : w.message)
     } catch (err) { e.reply(formatError(err)) }
