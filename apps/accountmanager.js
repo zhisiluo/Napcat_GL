@@ -63,6 +63,8 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
+      const status = await client.checkLoginStatus(qq).catch(() => ({ status: 'error' }))
+      if (status.status === 'online') { this.reply(`QQ ${qq} 已在 ${serverName} 登录`); return true }
       const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
 
       let r = await client.getQQQRCode(tmpFile, qq)
@@ -172,64 +174,34 @@ export class AccountManager extends plugin {
     return true
   }
 
-  async _checkAlreadyOnline(e, client, qq, serverName) {
-    const running = await client.isNapCatRunning(qq)
-    if (!running.running) return false
-    const status = await client.checkLoginStatus(qq).catch(() => ({ status: 'error' }))
-    if (status.status === 'online') {
-      this.reply(`QQ ${qq} 已在 ${serverName} 登录，无需重新扫码`)
-      return true
-    }
-    return false
-  }
-
   async _sendQRCode(e, client, qq, serverName) {
-    if (await this._checkAlreadyOnline(e, client, qq, serverName)) return
-
-    // 记录当前QR mtime作为基准,只接受新生成的QR
-    const qrPaths = [
-      `${client.napcatBasePath}/qq_${qq}/cache/qrcode.png`,
-      `${client.napcatConfigDir}/qq_${qq}/cache/qrcode.png`,
-      `${client.napcatBasePath}/cache/qrcode.png`,
-      '/tmp/napcat/qrcode.png',
-    ]
-    let baseline = '0'
-    for (const p of qrPaths) {
-      try {
-        const sr = await client.executeCommand(`stat -c %Y "${p}" 2>/dev/null || echo 0`)
-        const m = (sr.stdout || '').trim()
-        if (m && m !== '0') { baseline = m; break }
-      } catch {}
-    }
-
-    const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
-    try {
-      let r
-      for (let i = 0; i < 16; i++) {
-        await sleep(i === 0 ? 0 : 2000)
-        // 检查QR mtime是否更新(不是旧码)
-        if (baseline !== '0') {
-          try {
-            const sr = await client.executeCommand(`stat -c %Y "${qrPaths[0]}" 2>/dev/null || echo 0`)
-            const cur = (sr.stdout || '').trim()
-            if (!cur || cur === '0' || cur === baseline) continue
-            baseline = cur
-          } catch {}
-        }
-        r = await client.getQQQRCode(tmpFile, qq)
-        if (r && r.success) break
+    // 轮询 WebUI API 32秒: 登录了就报成功, 有QR就发码
+    for (let i = 0; i < 16; i++) {
+      await sleep(i === 0 ? 0 : 2000)
+      const status = await client.checkLoginStatus(qq).catch(() => ({ status: 'error' }))
+      if (status.status === 'online') {
+        this.reply(`QQ ${qq} 已在 ${serverName} 登录，无需扫码`)
+        return
       }
-      if (r && r.success) {
-        const buf = fs.readFileSync(tmpFile)
-        this.reply(segment.image(buf))
-        this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
-        this._monitorLogin(e, client, qq, serverName)
-      } else {
-        this.reply(`QQ ${qq} 已启动，但二维码获取失败\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
+      if (status.status === 'offline' || status.status === 'login_failed') {
+        this.reply(`QQ ${qq} 启动失败: ${status.message || '进程已退出'}`)
+        return
       }
-    } finally {
-      cleanTempFile(tmpFile)
+      if (status.status === 'waiting_qr') {
+        const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
+        try {
+          const r = await client.getQQQRCode(tmpFile, qq)
+          if (r && r.success) {
+            const buf = fs.readFileSync(tmpFile)
+            this.reply(segment.image(buf))
+            this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
+            this._monitorLogin(e, client, qq, serverName)
+            return
+          }
+        } finally { cleanTempFile(tmpFile) }
+      }
     }
+    this.reply(`QQ ${qq} 启动超时，请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
   }
 
   async _monitorLogin(e, client, qq, serverName) {
