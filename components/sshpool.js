@@ -209,8 +209,8 @@ class SSHClient {
     )
     if (proc.success) {
       const seconds = parseInt(proc.stdout.trim()) || 0
-      if (seconds > 60) return { status: 'online' }        // 存活>60秒=已登录
-      if (seconds > 0)  return { status: 'waiting_qr' }    // 存活<60秒=等待扫码
+      if (seconds > 300) return { status: 'online' }       // 存活>5分钟=已登录
+      if (seconds > 0)   return { status: 'waiting_qr' }   // 存活<5分钟=等待扫码
     }
     const running = await this.isNapCatRunning(qq)
     if (!running.running) return { status: 'offline' }
