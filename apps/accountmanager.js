@@ -47,6 +47,8 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
+      const alreadyOnline = await this._checkAlreadyOnline(e, client, qq, serverName)
+      if (alreadyOnline) return true
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
       this.reply('正在等待二维码...')
@@ -54,6 +56,17 @@ export class AccountManager extends plugin {
       await this._sendQRCode(e, client, qq, serverName)
     } catch (err) { this.reply(formatError(err)) }
     return true
+  }
+
+  async _checkAlreadyOnline(e, client, qq, serverName) {
+    const running = await client.isNapCatRunning(qq)
+    if (!running.running) return false
+    const status = await client.checkLoginStatus(qq).catch(() => ({ status: 'error' }))
+    if (status.status === 'online') {
+      this.reply(`QQ ${qq} 已在 ${serverName} 登录，无需重新扫码`)
+      return true
+    }
+    return false
   }
 
   async reQRCode(e) {
@@ -203,6 +216,7 @@ export class AccountManager extends plugin {
 
       try {
         const status = await client.checkLoginStatus(qq)
+        logger.info(`[ngl] QQ ${qq} poll ${i+1}/${maxPolls}: status=${status.status} ${status.message||''}`)
 
         if (status.status === 'online') {
           reply(`QQ ${qq} 登录成功`)
