@@ -47,6 +47,12 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
+      // 先查是否已登录,已在线就不重启
+      const alreadyOnline = await client.checkLoginStatus(qq).catch(() => ({}))
+      if (alreadyOnline.status === 'online') {
+        this.reply(`QQ ${qq} 已在 ${serverName} 登录`)
+        return true
+      }
       const started = await this._ensureAccountStarted(e, client, serverName, qq)
       if (!started) return true
       this.reply('正在等待二维码...')
