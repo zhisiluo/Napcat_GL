@@ -2,167 +2,178 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NapCat GL 帮助</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   width: 1000px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
-  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
-  padding: 24px;
+  background: linear-gradient(160deg, #e8f4fd 0%, #dbeafe 50%, #ede9fe 100%);
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  color: #1e293b;
+  padding: 0;
 }
 
-/* ── 头部卡片 ─────────────────────────────────────── */
+#container {
+  padding: 28px 28px 20px;
+}
+
+/* ── 顶部标题 ── */
 .header {
-  background: rgba(255,255,255,0.18);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.35);
-  border-radius: 16px;
-  padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 16px;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  margin-bottom: 22px;
 }
-.logo {
-  width: 44px;
-  height: 44px;
-  background: #fff;
+.header-logo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   border-radius: 12px;
-  display: grid;
-  place-items: center;
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
   font-weight: 900;
-  color: #764ba2;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-.header-text { flex: 1; }
-.header-title {
-  font-size: 18px;
-  font-weight: 700;
   color: #fff;
-  letter-spacing: 0.01em;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(59,130,246,0.35);
 }
-.header-sub {
+.header-text .title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 1px;
+}
+.header-text .sub {
   font-size: 12px;
-  color: rgba(255,255,255,0.75);
-  margin-top: 2px;
+  color: #64748b;
+  margin-top: 3px;
 }
-.version-pill {
-  background: rgba(255,255,255,0.25);
-  border: 1px solid rgba(255,255,255,0.5);
+.header-badge {
+  margin-left: auto;
+  background: rgba(59,130,246,0.10);
+  border: 1px solid rgba(59,130,246,0.3);
   border-radius: 20px;
   padding: 4px 14px;
   font-size: 12px;
-  font-weight: 600;
-  color: #fff;
+  color: #3b82f6;
 }
 
-/* ── 分组网格 ─────────────────────────────────────── */
+/* ── 分组 ── */
 .groups {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 16px;
 }
-
-/* ── 卡片 ─────────────────────────────────────────── */
 .group {
-  background: #fff;
-  border-radius: 14px;
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(0,0,0,0.07);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
-
 .group-header {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
+  background: rgba(0,0,0,0.025);
+  border-bottom: 1px solid rgba(0,0,0,0.055);
 }
-.group-label {
+.group-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.group-name {
   font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  flex: 1;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  color: #1e293b;
 }
 .group-count {
-  font-size: 10.5px;
-  font-weight: 600;
-  color: rgba(255,255,255,0.8);
-  background: rgba(0,0,0,0.12);
+  margin-left: auto;
+  font-size: 11px;
+  color: #64748b;
+  background: rgba(0,0,0,0.05);
   border-radius: 10px;
   padding: 1px 8px;
 }
 
-/* ── 命令行 ─────────────────────────────────────────── */
-.cmd-list { padding: 4px 0; }
-.cmd-row {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 8px;
-  align-items: baseline;
-  padding: 5px 14px;
+/* ── 命令列表 ── */
+.cmd-list {
+  padding: 8px 6px;
 }
-.cmd-row + .cmd-row {
-  border-top: 1px solid #f1f3f5;
+.cmd-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
 }
 .cmd-name {
-  font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 600;
+  color: #2563eb;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+.cmd-sep {
+  width: 1px;
+  height: 10px;
+  background: rgba(0,0,0,0.12);
+  flex-shrink: 0;
+  align-self: center;
 }
 .cmd-desc {
   font-size: 11px;
-  color: #6c757d;
-  line-height: 1.45;
+  color: #64748b;
+  line-height: 1.4;
 }
 
-/* ── 底部 ─────────────────────────────────────────── */
+/* ── 底部 ── */
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 14px;
-  padding: 10px 16px;
-  background: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.3);
-  border-radius: 10px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,0.07);
   font-size: 11px;
-  color: rgba(255,255,255,0.8);
+  color: #94a3b8;
 }
-.footer-cmd {
-  font-family: "SF Mono", "Consolas", monospace;
-  font-weight: 600;
-  color: #fff;
-}
+.footer-tip { color: #64748b; }
 </style>
 </head>
 <body>
+<div id="container">
 
   <div class="header">
-    <div class="logo">N</div>
+    <div class="header-logo">N</div>
     <div class="header-text">
-      <div class="header-title">NapCat GL 管理插件</div>
-      <div class="header-sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
+      <div class="title">NapCat GL 管理插件</div>
+      <div class="sub">多服务器 NapCat 远程管理 · 所有命令均需 master 权限</div>
     </div>
-    <span class="version-pill">v{{version}}</span>
+    <div class="header-badge">v{{version}}</div>
   </div>
 
   <div class="groups">
     {{each helpGroups group}}
     <div class="group">
-      <div class="group-header" style="background: {{group.color}};">
-        <span class="group-label">{{group.group}}</span>
+      <div class="group-header">
+        <div class="group-dot" style="background:{{group.color}}"></div>
+        <span class="group-name">{{group.group}}</span>
         <span class="group-count">{{group.list.length}} 条</span>
       </div>
       <div class="cmd-list">
         {{each group.list cmd}}
         <div class="cmd-row">
-          <span class="cmd-name" style="color: {{group.color}};">{{cmd.title}}</span>
+          <span class="cmd-name">{{cmd.title}}</span>
+          <div class="cmd-sep"></div>
           <span class="cmd-desc">{{cmd.desc}}</span>
         </div>
         {{/each}}
@@ -172,9 +183,10 @@ body {
   </div>
 
   <div class="footer">
-    <span class="footer-cmd">#ngl帮助</span>
-    <span>NapCat-GL · TRSS-Yunzai · github.com/zhisiluo/Napcat_GL</span>
+    <span class="footer-tip">#ngl帮助 查看此图</span>
+    <span>NapCat-GL · TRSS-Yunzai</span>
   </div>
 
+</div>
 </body>
 </html>
