@@ -66,23 +66,46 @@ export class AccountManager extends plugin {
     const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
-      // 删除旧二维码文件，等 NapCat 自动重新生成
-      await client.executeCommand(
-        `rm -f "${client.napcatBasePath}/cache/qrcode.png" /tmp/napcat/qrcode.png 2>/dev/null; true`
-      )
-      e.reply('正在等待新二维码生成...')
-      // 轮询最多 20 秒
-      let got = false
       const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
-      for (let i = 0; i < 10; i++) {
-        await new Promise(r => setTimeout(r, 2000))
-        const r = await client.getQQQRCode(tmpFile)
-        if (r.success) { got = true; break }
+
+      // 优先直接获取当前二维码（NapCat 可能已自动刷新）
+      let r = await client.getQQQRCode(tmpFile)
+
+      if (!r.success) {
+        // 无二维码文件 → 重启进程强制生成
+        e.reply('未检测到二维码，正在重启进程重新生成...')
+        const mode = await client.detectProcessMode()
+        if (mode === 'wrapper') {
+          await client.napcatStop(qq)
+          await new Promise(res => setTimeout(res, 2000))
+          const startR = await client.napcatStart(qq)
+          if (!startR.success) {
+            e.reply(`重启失败: ${parseNapcatError(startR, qq, serverName)}`)
+            return true
+          }
+        } else if (mode === 'screen') {
+          await client.executeCommand(`pkill -f "napcat_${qq}" 2>/dev/null || true`)
+          await new Promise(res => setTimeout(res, 1000))
+          await client.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}"`)
+        } else {
+          await client.executeCommand(`pkill -f "xvfb-run.*qq.*-q ${qq}" 2>/dev/null || true`)
+          await new Promise(res => setTimeout(res, 1000))
+          await client.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
+        }
+
+        e.reply('正在等待新二维码生成...')
+        let got = false
+        for (let i = 0; i < 10; i++) {
+          await new Promise(res => setTimeout(res, 2000))
+          r = await client.getQQQRCode(tmpFile)
+          if (r.success) { got = true; break }
+        }
+        if (!got) {
+          e.reply('未能获取到新二维码，请检查 NapCat 是否正常运行')
+          return true
+        }
       }
-      if (!got) {
-        e.reply('未获取到新二维码，NapCat 可能需要重启。\n手动重启后再次发送本命令。')
-        return true
-      }
+
       try {
         const buf = fs.readFileSync(tmpFile)
         e.reply(segment.image(buf))
@@ -248,13 +271,24 @@ export class AccountManager extends plugin {
           return
         }
 
-        // mtime 变化说明二维码已自动刷新（旧码过期）
+        // mtime 变化 → NapCat 自动刷新了二维码，直接推新图给用户
         if (startMtime && startMtime !== '0') {
           const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
           const cur = (r.stdout || '').trim()
           if (cur && cur !== '0' && cur !== startMtime) {
-            finish(`二维码已过期（已自动刷新），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
-            return
+            startMtime = cur  // 更新基准，继续监控
+            const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_refresh_${Date.now()}.png`)
+            try {
+              const qrR = await client.getQQQRCode(tmpFile)
+              if (qrR.success) {
+                const buf = fs.readFileSync(tmpFile)
+                e.reply(segment.image(buf))
+                e.reply(`QQ ${qq} 二维码已刷新，请重新扫码（3分钟内有效）`)
+              }
+            } finally {
+              try { fs.unlinkSync(tmpFile) } catch {}
+            }
+            return  // 继续下一轮轮询（done 未置为 true）
           }
         }
 
