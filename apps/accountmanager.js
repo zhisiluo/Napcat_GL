@@ -65,7 +65,7 @@ export class AccountManager extends plugin {
       const client = await pool.get(serverName)
       const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
 
-      let r = await client.getQQQRCode(tmpFile)
+      let r = await client.getQQQRCode(tmpFile, qq)
 
       if (!r.success) {
         this.reply('未检测到二维码，正在重启进程重新生成...')
@@ -81,7 +81,7 @@ export class AccountManager extends plugin {
         let got = false
         for (let i = 0; i < 10; i++) {
           await sleep(2000)
-          r = await client.getQQQRCode(tmpFile)
+          r = await client.getQQQRCode(tmpFile, qq)
           if (r.success) { got = true; break }
         }
         if (!got) {
@@ -97,7 +97,7 @@ export class AccountManager extends plugin {
       } finally {
         cleanTempFile(tmpFile)
       }
-      this._monitorLogin(e, client, qq, serverName)
+      this._monitorLogin(e, client, qq, serverName, r.remotePath)
     } catch (err) { this.reply(formatError(err)) }
     return true
   }
@@ -178,14 +178,14 @@ export class AccountManager extends plugin {
       let r
       for (let i = 0; i < 8; i++) {
         await sleep(i === 0 ? 0 : 2000)
-        r = await client.getQQQRCode(tmpFile)
+        r = await client.getQQQRCode(tmpFile, qq)
         if (r.success) break
       }
       if (r.success) {
         const buf = fs.readFileSync(tmpFile)
         this.reply(segment.image(buf))
         this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
-        this._monitorLogin(e, client, qq, serverName)
+        this._monitorLogin(e, client, qq, serverName, r.remotePath)
       } else {
         this.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
       }
@@ -194,8 +194,8 @@ export class AccountManager extends plugin {
     }
   }
 
-  async _monitorLogin(e, client, qq, serverName) {
-    const qrPath = `${client.napcatBasePath}/cache/qrcode.png`
+  async _monitorLogin(e, client, qq, serverName, qrPath = '') {
+    if (!qrPath) qrPath = `${client.napcatBasePath}/cache/qrcode.png`
     const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
     const reply = msg => { try { const r = e.reply(msg); if (r === false) throw new Error('reply返回false') } catch (err) { logger.error(`[ngl] QQ ${qq} 回复失败: ${err.message}`) } }
 

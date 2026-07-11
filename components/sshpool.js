@@ -328,8 +328,10 @@ class SSHClient {
     }
   }
 
-  async getQQQRCode(localSavePath) {
+  async getQQQRCode(localSavePath, qq = '') {
     const paths = [
+      `${this.napcatBasePath}/qq_${qq}/cache/qrcode.png`,
+      `${this.napcatConfigDir}/qq_${qq}/cache/qrcode.png`,
       `${this.napcatBasePath}/cache/qrcode.png`,
       '/tmp/napcat/qrcode.png',
     ]
@@ -341,7 +343,8 @@ class SSHClient {
       return { success: false, message: '未找到二维码文件，请确认 NapCat 已生成登录二维码' }
     }
     if (!fs.existsSync(path.dirname(localSavePath))) fs.mkdirSync(path.dirname(localSavePath), { recursive: true })
-    return this.downloadFile(remotePath, localSavePath)
+    const dl = await this.downloadFile(remotePath, localSavePath)
+    return { ...dl, remotePath }
   }
 
   async readFile(remotePath) {
