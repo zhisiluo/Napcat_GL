@@ -192,6 +192,18 @@ class SSHClient {
     return this.executeCommand(command)
   }
 
+  async checkLoginStatus(qq) {
+    assertQQ(qq)
+    const r = await this.executeCommand(`napcat status ${qq}`)
+    if (!r.success) return { status: 'error', message: r.stderr || '状态查询失败' }
+    const out = r.stdout || ''
+    if (/在线|online|正常运行/i.test(out)) return { status: 'online' }
+    if (/扫码|qrcode|二维码|等待.*扫描|waiting.*scan/i.test(out)) return { status: 'waiting_qr' }
+    if (/离线|offline|已停止|stopped/i.test(out)) return { status: 'offline', message: out.trim() }
+    if (/登录失败|login.*fail|密码|password/i.test(out)) return { status: 'login_failed', message: out.trim() }
+    return { status: 'unknown', message: out.trim() }
+  }
+
   async napcatStart(qq) {
     if (!qq) return { success: false, message: '请指定要启动的 QQ 号' }
     return this.executeCommand(`napcat start ${qq}`)

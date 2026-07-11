@@ -97,7 +97,7 @@ export class AccountManager extends plugin {
       } finally {
         cleanTempFile(tmpFile)
       }
-      this._monitorLogin(e, client, qq, serverName, r.remotePath)
+      this._monitorLogin(e, client, qq, serverName)
     } catch (err) { this.reply(formatError(err)) }
     return true
   }
@@ -185,7 +185,7 @@ export class AccountManager extends plugin {
         const buf = fs.readFileSync(tmpFile)
         this.reply(segment.image(buf))
         this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
-        this._monitorLogin(e, client, qq, serverName, r.remotePath)
+        this._monitorLogin(e, client, qq, serverName)
       } else {
         this.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
       }
@@ -194,45 +194,30 @@ export class AccountManager extends plugin {
     }
   }
 
-  async _monitorLogin(e, client, qq, serverName, qrPath = '') {
-    if (!qrPath) qrPath = `${client.napcatBasePath}/cache/qrcode.png`
+  async _monitorLogin(e, client, qq, serverName) {
+    const reply = msg => { try { e.reply(msg) } catch {} }
     const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
-    const reply = msg => { try { const r = e.reply(msg); if (r === false) throw new Error('reply返回false') } catch (err) { logger.error(`[ngl] QQ ${qq} 回复失败: ${err.message}`) } }
-
-    logger.info(`[ngl] 开始监控 QQ ${qq} 登录, qrPath=${qrPath}`)
-
-    let startMtime = '0'
-    try {
-      const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
-      startMtime = (r.stdout || '').trim() || '0'
-    } catch { startMtime = '0' }
 
     for (let i = 0; i < maxPolls; i++) {
       if (i > 0) await sleep(POLL_INTERVAL)
 
       try {
-        const qrExists = await client.fileExists(qrPath)
-        logger.info(`[ngl] QQ ${qq} poll ${i+1}/${maxPolls}: qrExists=${qrExists}, mtime=${startMtime}`)
+        const status = await client.checkLoginStatus(qq)
 
-        if (!qrExists) {
+        if (status.status === 'online') {
           reply(`QQ ${qq} 登录成功`)
           return
         }
-
-        const r = await client.executeCommand(`stat -c %Y "${qrPath}" 2>/dev/null || echo 0`)
-        const cur = (r.stdout || '').trim()
-        if (cur && cur !== '0' && cur !== startMtime) {
-          startMtime = cur
-          reply(`QQ ${qq} 二维码已过期\n请重新获取: #ngl重新扫码 ${serverName} ${qq}`)
+        if (status.status === 'login_failed') {
+          reply(`QQ ${qq} 登录失败: ${status.message}`)
+          return
         }
-
-        const running = await client.isNapCatRunning(qq)
-        if (!running.running) {
+        if (status.status === 'offline') {
           reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
           return
         }
       } catch (err) {
-        logger.error(`[ngl] QQ ${qq} 轮询异常: ${err.message}`)
+        logger.warn(`[ngl] QQ ${qq} 轮询异常: ${err.message}`)
       }
     }
 
