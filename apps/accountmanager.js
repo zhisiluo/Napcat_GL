@@ -195,6 +195,7 @@ export class AccountManager extends plugin {
   }
 
   async _monitorLogin(e, client, qq, serverName) {
+    const reply = msg => { try { e.reply(msg) } catch {} }
     const qrPath = `${client.napcatBasePath}/cache/qrcode.png`
     const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
 
@@ -210,7 +211,7 @@ export class AccountManager extends plugin {
       try {
         const qrExists = await client.fileExists(qrPath)
         if (!qrExists) {
-          this.reply(`QQ ${qq} 登录成功`)
+          reply(`QQ ${qq} 登录成功`)
           return
         }
 
@@ -224,8 +225,8 @@ export class AccountManager extends plugin {
               const qrR = await client.getQQQRCode(tmpFile)
               if (qrR.success) {
                 const buf = fs.readFileSync(tmpFile)
-                this.reply(segment.image(buf))
-                this.reply(`QQ ${qq} 二维码已过期\n请重新获取: #ngl重新扫码 ${serverName} ${qq}`)
+                reply(segment.image(buf))
+                reply(`QQ ${qq} 二维码已过期\n请重新获取: #ngl重新扫码 ${serverName} ${qq}`)
               }
             } finally {
               cleanTempFile(tmpFile)
@@ -235,12 +236,12 @@ export class AccountManager extends plugin {
 
         const running = await client.isNapCatRunning(qq)
         if (!running.running) {
-          this.reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
+          reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
           return
         }
       } catch (err) { logger.warn(`[ngl] 监控轮询异常: ${err.message}`) }
     }
 
-    this.reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+    reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
   }
 }
