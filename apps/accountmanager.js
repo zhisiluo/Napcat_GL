@@ -175,12 +175,16 @@ export class AccountManager extends plugin {
   async _sendQRCode(e, client, qq, serverName) {
     const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
     try {
-      const r = await client.getQQQRCode(tmpFile)
+      let r
+      for (let i = 0; i < 8; i++) {
+        await sleep(i === 0 ? 0 : 2000)
+        r = await client.getQQQRCode(tmpFile)
+        if (r.success) break
+      }
       if (r.success) {
         const buf = fs.readFileSync(tmpFile)
         this.reply(segment.image(buf))
         this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
-
         this._monitorLogin(e, client, qq, serverName)
       } else {
         this.reply(`QQ ${qq} 已启动，但二维码获取失败: ${r.message}\n请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
