@@ -784,7 +784,6 @@ class ConnectionPool {
       throw err
     }
 
-    // 若 napcatBasePath 未配置，自动检测并持久化
     if (!serverConfig.napcatBasePath || !serverConfig.napcatBasePath.trim()) {
       const detected = await client.detectNapCatPath()
       if (detected) {
@@ -1016,7 +1015,7 @@ class ConnectionPool {
           if (!connected) throw new Error('connect failed')
           await client.executeCommand('echo ok')
           await client.disconnect()
-        })().catch(() => {}) // prevent unhandled rejection when timeout wins the race
+        })().catch(() => {})
 
         try {
           await Promise.race([ping, timeout])

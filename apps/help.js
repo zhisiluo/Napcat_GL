@@ -7,7 +7,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const tplFile   = path.join(__dirname, '../resources/help/index.html')
 const VERSION   = '2.0.0'
 
-// 颜色按分组轮流使用
 const COLORS = ['#58a6ff', '#3fb950', '#f78166', '#d2a8ff', '#ffa657', '#79c0ff', '#56d364', '#ff7b72']
 
 const HELP_GROUPS = [
@@ -114,7 +113,7 @@ export class NglHelp extends plugin {
   async renderHelp(e) {
     if (!e.isMaster) return true
     try {
-      // 注入颜色
+
       const groups = HELP_GROUPS.map((g, i) => ({
         ...g,
         color: COLORS[i % COLORS.length],
