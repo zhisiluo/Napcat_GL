@@ -68,19 +68,21 @@ export class ConfigSync extends plugin {
         await dstClient.deletePath(dstTmpPath)
         return true
       }
+      let mode = 'unknown'
       try {
-        const mode = await dstClient.detectProcessMode()
+        mode = await dstClient.detectProcessMode()
         if (mode === 'wrapper') await dstClient.executeCommand('napcat restart 2>&1 || true', 30000)
       } catch (err) { logger.warn(`[ngl] 同步后重启失败: ${err.message}`) }
-      fs.unlinkSync(localPath)
+      cleanTempFile(localPath)
       await srcClient.deletePath(srcTmpPath)
       await dstClient.deletePath(dstTmpPath)
 
+      const restartMsg = mode === 'wrapper' ? '目标 NapCat 已尝试重启' : `目标 NapCat 未自动重启 (模式: ${mode})，请手动重启`
       this.reply([
         `配置同步完成!`,
         `源:   ${src}`,
         `目标: ${dst}`,
-        `目标 NapCat 已尝试重启，请用 #ngl状态 ${dst} 确认`,
+        `${restartMsg}，请用 #ngl状态 ${dst} 确认`,
       ].join('\n'))
 
     } catch (err) {

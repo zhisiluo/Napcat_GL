@@ -49,6 +49,7 @@ class SSHClient {
     if (this.isConnected) return true
     if (this._connecting) return this._connecting
 
+    if (this.client) { try { this.client.end() } catch {} }
     return this._connecting = new Promise((resolve) => {
       this.client = new Client()
 
@@ -288,8 +289,9 @@ class SSHClient {
       return new Promise((resolve, reject) => {
         const readStream = sftp.createReadStream(remotePath)
         const writeStream = fs.createWriteStream(localPath)
-        readStream.on('error', (err) => reject(new Error(`读取远程文件失败: ${err.message}`)))
-        writeStream.on('error', (err) => reject(new Error(`写入本地文件失败: ${err.message}`)))
+        const cleanup = () => { try { readStream.destroy(); writeStream.close() } catch {} }
+        readStream.on('error', (err) => { cleanup(); reject(new Error(`读取远程文件失败: ${err.message}`)) })
+        writeStream.on('error', (err) => { cleanup(); reject(new Error(`写入本地文件失败: ${err.message}`)) })
         writeStream.on('finish', () => resolve({ success: true, message: '文件下载成功', localPath }))
         readStream.pipe(writeStream)
       })
@@ -304,8 +306,9 @@ class SSHClient {
       return new Promise((resolve, reject) => {
         const readStream  = fs.createReadStream(localPath)
         const writeStream = sftp.createWriteStream(remotePath)
-        readStream.on('error',  err => reject(new Error(`读取本地文件失败: ${err.message}`)))
-        writeStream.on('error', err => reject(new Error(`写入远程文件失败: ${err.message}`)))
+        const cleanup = () => { try { readStream.destroy(); writeStream.close() } catch {} }
+        readStream.on('error',  err => { cleanup(); reject(new Error(`读取本地文件失败: ${err.message}`)) })
+        writeStream.on('error', err => { cleanup(); reject(new Error(`写入远程文件失败: ${err.message}`)) })
         writeStream.on('close', ()  => resolve({ success: true, remotePath }))
         readStream.pipe(writeStream)
       })
@@ -358,7 +361,7 @@ class SSHClient {
         data = JSON.parse(result.content)
       } catch {
         let cleaned = result.content
-          .replace(/\/\/.*$/gm, '')
+          .replace(/^\s*\/\/.*$/gm, '')
           .replace(/\/\*[\s\S]*?\*\//g, '')
           .replace(/,\s*([}\]])/g, '$1')
         data = JSON.parse(cleaned)
@@ -732,6 +735,7 @@ class ConnectionPool {
   constructor(configPath) {
     this._configPath = configPath || path.resolve(__dirname, '../config/servers.json')
     this._clients = new Map()
+    this._connecting = new Map()
 
     try {
       this._config = loadConfig(this._configPath) || { _schemaVersion: 1, defaultServer: '', servers: {} }
@@ -760,40 +764,52 @@ class ConnectionPool {
     const cached = this._clients.get(name)
     if (cached) return cached
 
-    const serverConfig = this._config.servers[name]
-    if (!serverConfig) {
-      const err = new Error(`服务器 ${name} 不存在`)
-      err.code = 'SRV_NOTFOUND'
-      throw err
-    }
+    const connecting = this._connecting.get(name)
+    if (connecting) return connecting
 
-    if (serverConfig.disabled) {
-      const err = new Error(`服务器 ${name} 已禁用`)
-      err.code = 'SRV_DISABLED'
-      throw err
-    }
-
-    const client = new SSHClient(serverConfig)
-    const connected = await client.connect()
-    if (!connected) {
-      const err = new Error(`服务器 ${name} 连接失败`)
-      err.code = 'SRV_OFFLINE'
-      throw err
-    }
-
-    if (!serverConfig.napcatBasePath || !serverConfig.napcatBasePath.trim()) {
-      const detected = await client.detectNapCatPath()
-      if (detected) {
-        client.napcatBasePath = detected
-        client.napcatConfigDir = `${detected}/config`
-        this._config.servers[name].napcatBasePath = detected
-        this._config.servers[name].napcatConfigDir = `${detected}/config`
-        try { saveConfig(this._config, this._configPath) } catch (err) { logger.warn(`[ngl:pool] 保存检测路径失败: ${err.message}`) }
+    const promise = (async () => {
+      const serverConfig = this._config.servers[name]
+      if (!serverConfig) {
+        const err = new Error(`服务器 ${name} 不存在`)
+        err.code = 'SRV_NOTFOUND'
+        throw err
       }
-    }
 
-    this._clients.set(name, client)
-    return client
+      if (serverConfig.disabled) {
+        const err = new Error(`服务器 ${name} 已禁用`)
+        err.code = 'SRV_DISABLED'
+        throw err
+      }
+
+      const client = new SSHClient(serverConfig)
+      const connected = await client.connect()
+      if (!connected) {
+        const err = new Error(`服务器 ${name} 连接失败`)
+        err.code = 'SRV_OFFLINE'
+        throw err
+      }
+
+      if (!serverConfig.napcatBasePath || !serverConfig.napcatBasePath.trim()) {
+        const detected = await client.detectNapCatPath()
+        if (detected) {
+          client.napcatBasePath = detected
+          client.napcatConfigDir = `${detected}/config`
+          this._config.servers[name].napcatBasePath = detected
+          this._config.servers[name].napcatConfigDir = `${detected}/config`
+          try { saveConfig(this._config, this._configPath) } catch (err) { logger.warn(`[ngl:pool] 保存检测路径失败: ${err.message}`) }
+        }
+      }
+
+      this._clients.set(name, client)
+      return client
+    })()
+
+    this._connecting.set(name, promise)
+    try {
+      return await promise
+    } finally {
+      this._connecting.delete(name)
+    }
   }
 
   async add(name, config) {
@@ -950,7 +966,7 @@ class ConnectionPool {
               connected = await Promise.race([tempClient.connect(), timeout])
             } finally { clearTimeout(timer) }
             if (!connected) {
-              tempClient.disconnect()
+              await tempClient.disconnect()
               status.error = 'SSH 连接失败'
               return status
             }
