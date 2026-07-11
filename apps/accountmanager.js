@@ -175,33 +175,51 @@ export class AccountManager extends plugin {
   }
 
   async _sendQRCode(e, client, qq, serverName) {
-    // 轮询 WebUI API 32秒: 登录了就报成功, 有QR就发码
-    for (let i = 0; i < 16; i++) {
-      await sleep(i === 0 ? 0 : 2000)
-      const status = await client.checkLoginStatus(qq).catch(() => ({ status: 'error' }))
-      if (status.status === 'online') {
-        this.reply(`QQ ${qq} 已在 ${serverName} 登录，无需扫码`)
-        return
+    // 直接取QR码,不依赖WebUI API(不可靠)
+    const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
+    try {
+      let r
+      for (let i = 0; i < 16; i++) {
+        await sleep(i === 0 ? 0 : 2000)
+        r = await client.getQQQRCode(tmpFile, qq)
+        if (r && r.success) break
       }
-      if (status.status === 'offline' || status.status === 'login_failed') {
-        this.reply(`QQ ${qq} 启动失败: ${status.message || '进程已退出'}`)
-        return
+      if (r && r.success) {
+        const buf = fs.readFileSync(tmpFile)
+        this.reply(segment.image(buf))
+        this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
+        this._monitorLogin(e, client, qq, serverName)
+      } else {
+        this.reply(`QQ ${qq} 启动超时或已在线，请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
       }
-      if (status.status === 'waiting_qr') {
-        const tmpFile = path.join(os.tmpdir(), `napcat_gl_qr_${Date.now()}.png`)
-        try {
-          const r = await client.getQQQRCode(tmpFile, qq)
-          if (r && r.success) {
-            const buf = fs.readFileSync(tmpFile)
-            this.reply(segment.image(buf))
-            this.reply(`QQ ${qq} 已在 ${serverName} 启动，请扫码登录（3分钟内有效）`)
-            this._monitorLogin(e, client, qq, serverName)
-            return
-          }
-        } finally { cleanTempFile(tmpFile) }
+    } finally { cleanTempFile(tmpFile) }
+  }
+
+  async _monitorLogin(e, client, qq, serverName) {
+    const reply = msg => { try { e.reply(msg) } catch {} }
+    const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
+
+    for (let i = 0; i < maxPolls; i++) {
+      if (i > 0) await sleep(POLL_INTERVAL)
+
+      try {
+        const status = await client.checkLoginStatus(qq)
+        logger.info(`[ngl] QQ ${qq} poll ${i+1}/${maxPolls}: status=${status.status}`)
+
+        if (status.status === 'online') {
+          reply(`QQ ${qq} 登录成功`)
+          return
+        }
+        if (status.status === 'offline') {
+          reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
+          return
+        }
+      } catch (err) {
+        logger.warn(`[ngl] QQ ${qq} 轮询异常: ${err.message}`)
       }
     }
-    this.reply(`QQ ${qq} 启动超时，请稍后发: #ngl重新扫码 ${serverName} ${qq}`)
+
+    reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
   }
 
   async _monitorLogin(e, client, qq, serverName) {

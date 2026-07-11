@@ -195,25 +195,20 @@ class SSHClient {
 
   async checkLoginStatus(qq) {
     assertQQ(qq)
-    // 进程必须存活,否则WebUI可能返回旧状态(master进程没死)
+    // 进程存活是最基本的前提
     const running = await this.isNapCatRunning(qq)
     if (!running.running) return { status: 'offline' }
+    // napcat status 命令(仅wrapper模式有效)
     try {
-      const apiR = await this.webuiApiPost('/api/QQLogin/CheckLoginStatus')
-      if (apiR.success && apiR.data) {
-        const d = apiR.data.data || apiR.data
-        logger.info(`[ngl] WebUI API QQ ${qq}: isLogin=${d.isLogin} isOffline=${d.isOffline} loginError=${d.loginError||'无'} qrcodeurl=${!!d.qrcodeurl}`)
-        // loginError非空说明实际未登录,需要重新扫码
-        if (d.isLogin === true && !d.loginError) return { status: 'online' }
-        if (d.loginError) return { status: 'waiting_qr' }
-        if (d.isOffline === true) return { status: 'offline', message: 'QQ已离线' }
-        if (d.qrcodeurl) return { status: 'waiting_qr' }
+      const r = await this.executeCommand(`napcat status ${qq}`)
+      if (r.success && r.stdout) {
+        const out = r.stdout || ''
+        if (/在线|online|正常运行|登录成功/i.test(out)) return { status: 'online' }
+        if (/扫码|qrcode|二维码|等待.*扫描|waiting.*scan|未运行|已停止/i.test(out)) return { status: 'waiting_qr' }
         return { status: 'waiting_qr' }
       }
-      logger.warn(`[ngl] WebUI API QQ ${qq} 返回异常: ${JSON.stringify(apiR)}`)
-    } catch (err) {
-      if (typeof logger !== 'undefined') logger.warn(`[ngl] WebUI API QQ ${qq} 调用失败: ${err.message}`)
-    }
+    } catch {}
+    // 进程存活但无法判断状态→等待扫码
     return { status: 'waiting_qr' }
   }
 
