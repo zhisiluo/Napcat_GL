@@ -10,17 +10,17 @@ export class NapcatBackup extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl备份\\s+(\\S+)$',                                          fnc: 'createBackup',  permission: 'master' },
-        { reg: '^#ngl备份列表\\s+(\\S+)$',                                       fnc: 'listBackups',   permission: 'master' },
-        { reg: '^#ngl恢复\\s+(\\S+)\\s+([\\w.\\-]+\\.tar\\.gz)$',               fnc: 'restoreBackup', permission: 'master' },
-        { reg: '^#ngl删除备份\\s+(\\S+)\\s+([\\w.\\-]+\\.tar\\.gz)$',           fnc: 'deleteBackup',  permission: 'master' },
+        { reg: '^#ngl备份\\s+(\\S+)',                                          fnc: 'createBackup',  permission: 'master' },
+        { reg: '^#ngl备份列表\\s+(\\S+)',                                       fnc: 'listBackups',   permission: 'master' },
+        { reg: '^#ngl恢复\\s+(\\S+)\\s+([\\w.\\-]+\\.tar\\.gz)',               fnc: 'restoreBackup', permission: 'master' },
+        { reg: '^#ngl删除备份\\s+(\\S+)\\s+([\\w.\\-]+\\.tar\\.gz)',           fnc: 'deleteBackup',  permission: 'master' },
       ]
     })
   }
 
   async createBackup(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl备份\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl备份\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl备份 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -32,7 +32,7 @@ export class NapcatBackup extends plugin {
 
   async listBackups(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl备份列表\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl备份列表\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl备份列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -44,7 +44,7 @@ export class NapcatBackup extends plugin {
 
   async restoreBackup(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl恢复\s+(\S+)\s+([\w.\-]+\.tar\.gz)$/)
+    const m = e.msg.match(/^#ngl恢复\s+(\S+)\s+([\w.\-]+\.tar\.gz)/)
     if (!m) { this.reply('用法: #ngl恢复 服务器名 文件名.tar.gz'); return true }
     try {
       const client = await pool.get(m[1])
@@ -56,7 +56,7 @@ export class NapcatBackup extends plugin {
 
   async deleteBackup(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl删除备份\s+(\S+)\s+([\w.\-]+\.tar\.gz)$/)
+    const m = e.msg.match(/^#ngl删除备份\s+(\S+)\s+([\w.\-]+\.tar\.gz)/)
     if (!m) { this.reply('用法: #ngl删除备份 服务器名 文件名.tar.gz'); return true }
     try {
       const client = await pool.get(m[1])

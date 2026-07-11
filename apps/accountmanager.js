@@ -231,7 +231,7 @@ export class AccountManager extends plugin {
 
         const running = await client.isNapCatRunning(qq)
         if (!running.running) {
-          this.reply(`QQ ${qq} 进程已退出，请检查后重试`)
+          this.reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
           return
         }
       } catch (err) { logger.warn(`[ngl] 监控轮询异常: ${err.message}`) }

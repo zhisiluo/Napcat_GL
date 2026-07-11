@@ -11,15 +11,15 @@ export class NapcatInstall extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl安装\\s+(\\S+)$',     fnc: 'installNapCat', permission: 'master' },
-        { reg: '^#ngl安装状态\\s+(\\S+)$',  fnc: 'checkInstall',  permission: 'master' },
+        { reg: '^#ngl安装\\s+(\\S+)',     fnc: 'installNapCat', permission: 'master' },
+        { reg: '^#ngl安装状态\\s+(\\S+)',  fnc: 'checkInstall',  permission: 'master' },
       ]
     })
   }
 
   async installNapCat(e) {
     if (!e.isMaster) return true
-    const server = (e.msg.match(/^#ngl安装\s+(\S+)$/) || [])[1]
+    const server = (e.msg.match(/^#ngl安装\s+(\S+)/) || [])[1]
     if (!server) { this.reply('用法: #ngl安装 服务器名'); return true }
 
     try {
@@ -75,7 +75,7 @@ export class NapcatInstall extends plugin {
 
   async checkInstall(e) {
     if (!e.isMaster) return true
-    const server = (e.msg.match(/^#ngl安装状态\s+(\S+)$/) || [])[1]
+    const server = (e.msg.match(/^#ngl安装状态\s+(\S+)/) || [])[1]
     if (!server) { this.reply('用法: #ngl安装状态 服务器名'); return true }
 
     try {

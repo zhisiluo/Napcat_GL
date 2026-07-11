@@ -14,14 +14,14 @@ export class ConfigSync extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl同步配置\\s+(\\S+)\\s+(\\S+)$', fnc: 'syncConfig', permission: 'master' },
+        { reg: '^#ngl同步配置\\s+(\\S+)\\s+(\\S+)', fnc: 'syncConfig', permission: 'master' },
       ]
     })
   }
 
   async syncConfig(e) {
     if (!e.isMaster) return true
-    const match = e.msg.match(/^#ngl同步配置\s+(\S+)\s+(\S+)$/)
+    const match = e.msg.match(/^#ngl同步配置\s+(\S+)\s+(\S+)/)
     if (!match) { this.reply('用法: #ngl同步配置 源服务器 目标服务器'); return true }
 
     const [, src, dst] = match

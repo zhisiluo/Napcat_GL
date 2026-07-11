@@ -11,18 +11,18 @@ export class NapcatSystem extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl系统信息\\s+(\\S+)$',   fnc: 'systemInfo',     permission: 'master' },
-        { reg: '^#ngl版本\\s+(\\S+)$',       fnc: 'versionInfo',    permission: 'master' },
-        { reg: '^#ngl进程\\s+(\\S+)$',       fnc: 'processInfo',    permission: 'master' },
-        { reg: '^#ngl服务状态\\s+(\\S+)$',   fnc: 'serviceStatus',  permission: 'master' },
-        { reg: '^#ngl日志文件\\s+(\\S+)$',   fnc: 'listLogFiles',   permission: 'master' },
+        { reg: '^#ngl系统信息\\s+(\\S+)',   fnc: 'systemInfo',     permission: 'master' },
+        { reg: '^#ngl版本\\s+(\\S+)',       fnc: 'versionInfo',    permission: 'master' },
+        { reg: '^#ngl进程\\s+(\\S+)',       fnc: 'processInfo',    permission: 'master' },
+        { reg: '^#ngl服务状态\\s+(\\S+)',   fnc: 'serviceStatus',  permission: 'master' },
+        { reg: '^#ngl日志文件\\s+(\\S+)',   fnc: 'listLogFiles',   permission: 'master' },
       ]
     })
   }
 
   async systemInfo(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl系统信息\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl系统信息\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl系统信息 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -45,7 +45,7 @@ export class NapcatSystem extends plugin {
 
   async versionInfo(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl版本\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl版本\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl版本 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -66,7 +66,7 @@ export class NapcatSystem extends plugin {
 
   async processInfo(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl进程\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl进程\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl进程 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -85,7 +85,7 @@ export class NapcatSystem extends plugin {
 
   async serviceStatus(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl服务状态\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl服务状态\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl服务状态 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -121,7 +121,7 @@ export class NapcatSystem extends plugin {
 
   async listLogFiles(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl日志文件\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl日志文件\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl日志文件 服务器名'); return true }
     try {
       const client = await pool.get(m[1])

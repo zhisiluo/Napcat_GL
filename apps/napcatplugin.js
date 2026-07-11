@@ -17,18 +17,18 @@ export class NapcatPlugin extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl插件列表\\s+(\\S+)$',                fnc: 'listPlugins',   permission: 'master' },
-        { reg: '^#ngl插件信息\\s+(\\S+)\\s+(.+)$',       fnc: 'pluginInfo',    permission: 'master' },
-        { reg: '^#ngl插件启用\\s+(\\S+)\\s+(.+)$',       fnc: 'enablePlugin',  permission: 'master' },
-        { reg: '^#ngl插件禁用\\s+(\\S+)\\s+(.+)$',       fnc: 'disablePlugin', permission: 'master' },
-        { reg: '^#ngl查看webui\\s+(\\S+)(\\s+key)?$',     fnc: 'checkWebUI',    permission: 'master' },
+        { reg: '^#ngl插件列表\\s+(\\S+)',                fnc: 'listPlugins',   permission: 'master' },
+        { reg: '^#ngl插件信息\\s+(\\S+)\\s+(.+)',       fnc: 'pluginInfo',    permission: 'master' },
+        { reg: '^#ngl插件启用\\s+(\\S+)\\s+(.+)',       fnc: 'enablePlugin',  permission: 'master' },
+        { reg: '^#ngl插件禁用\\s+(\\S+)\\s+(.+)',       fnc: 'disablePlugin', permission: 'master' },
+        { reg: '^#ngl查看webui\\s+(\\S+)(\\s+key)?',     fnc: 'checkWebUI',    permission: 'master' },
       ]
     })
   }
 
   async listPlugins(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl插件列表\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl插件列表\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl插件列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -59,7 +59,7 @@ export class NapcatPlugin extends plugin {
 
   async pluginInfo(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl插件信息\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl插件信息\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl插件信息 服务器名 插件ID'); return true }
     try {
       checkPluginId(m[2])
@@ -72,7 +72,7 @@ export class NapcatPlugin extends plugin {
 
   async enablePlugin(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl插件启用\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl插件启用\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl插件启用 服务器名 插件ID'); return true }
     try {
       checkPluginId(m[2])
@@ -85,7 +85,7 @@ export class NapcatPlugin extends plugin {
 
   async disablePlugin(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl插件禁用\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl插件禁用\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl插件禁用 服务器名 插件ID'); return true }
     try {
       checkPluginId(m[2])
@@ -97,7 +97,7 @@ export class NapcatPlugin extends plugin {
   }
   async checkWebUI(e) {
     if (!e.isMaster) return true
-    const match = e.msg.match(/^#ngl查看webui\s+(\S+)(\s+key)?$/)
+    const match = e.msg.match(/^#ngl查看webui\s+(\S+)(\s+key)?/)
     if (!match) { this.reply('用法: #ngl查看webui 服务器名 [key]'); return true }
 
     const serverName = match[1]

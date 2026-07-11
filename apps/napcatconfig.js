@@ -11,17 +11,17 @@ export class NapcatConfig extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl查看配置\\s+(\\S+)$',                                              fnc: 'viewGlobalConfig',   permission: 'master' },
-        { reg: '^#ngl修改配置\\s+(\\S+)\\s+(\\S+)\\s+(.+)$',                           fnc: 'editGlobalConfig',   permission: 'master' },
+        { reg: '^#ngl查看配置\\s+(\\S+)',                                              fnc: 'viewGlobalConfig',   permission: 'master' },
+        { reg: '^#ngl修改配置\\s+(\\S+)\\s+(\\S+)\\s+(.+)',                           fnc: 'editGlobalConfig',   permission: 'master' },
         { reg: '^#ngl账号列表$',                                                        fnc: 'listAllAccounts',    permission: 'master' },
-        { reg: '^#ngl查看账号配置\\s+(\\S+)\\s+(\\d+)$',                               fnc: 'viewAccountConfig',  permission: 'master' },
-        { reg: '^#ngl修改账号配置\\s+(\\S+)\\s+(\\d+)\\s+(\\S+)\\s+(.+)$',            fnc: 'editAccountConfig',  permission: 'master' },
-        { reg: '^#ngl查看OB11\\s+(\\S+)\\s+(\\d+)$',                                  fnc: 'viewOB11Config',     permission: 'master' },
-        { reg: '^#ngl修改OB11\\s+(\\S+)\\s+(\\d+)\\s+(\\S+)\\s+(.+)$',               fnc: 'editOB11Config',     permission: 'master' },
-        { reg: '^#ngl查看WebUI\\s+(\\S+)$',                                            fnc: 'viewWebUI',          permission: 'master' },
-        { reg: '^#ngl修改WebUI\\s+(\\S+)\\s+(\\S+)\\s+(.+)$',                         fnc: 'editWebUI',          permission: 'master' },
-        { reg: '^#ngl配置文件列表\\s+(\\S+)$',                                         fnc: 'listConfigFiles',    permission: 'master' },
-        { reg: '^#ngl配置目录\\s+(\\S+)$',                                             fnc: 'showConfigDir',      permission: 'master' },
+        { reg: '^#ngl查看账号配置\\s+(\\S+)\\s+(\\d+)',                               fnc: 'viewAccountConfig',  permission: 'master' },
+        { reg: '^#ngl修改账号配置\\s+(\\S+)\\s+(\\d+)\\s+(\\S+)\\s+(.+)',            fnc: 'editAccountConfig',  permission: 'master' },
+        { reg: '^#ngl查看OB11\\s+(\\S+)\\s+(\\d+)',                                  fnc: 'viewOB11Config',     permission: 'master' },
+        { reg: '^#ngl修改OB11\\s+(\\S+)\\s+(\\d+)\\s+(\\S+)\\s+(.+)',               fnc: 'editOB11Config',     permission: 'master' },
+        { reg: '^#ngl查看WebUI\\s+(\\S+)',                                            fnc: 'viewWebUI',          permission: 'master' },
+        { reg: '^#ngl修改WebUI\\s+(\\S+)\\s+(\\S+)\\s+(.+)',                         fnc: 'editWebUI',          permission: 'master' },
+        { reg: '^#ngl配置文件列表\\s+(\\S+)',                                         fnc: 'listConfigFiles',    permission: 'master' },
+        { reg: '^#ngl配置目录\\s+(\\S+)',                                             fnc: 'showConfigDir',      permission: 'master' },
       ]
     })
   }
@@ -54,7 +54,7 @@ export class NapcatConfig extends plugin {
 
   async viewGlobalConfig(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl查看配置\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl查看配置\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl查看配置 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -66,7 +66,7 @@ export class NapcatConfig extends plugin {
 
   async editGlobalConfig(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl修改配置\s+(\S+)\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl修改配置\s+(\S+)\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl修改配置 服务器名 key value'); return true }
     const [, serverName, key, value] = m
     try {
@@ -112,7 +112,7 @@ export class NapcatConfig extends plugin {
 
   async viewAccountConfig(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl查看账号配置\s+(\S+)\s+(\d+)$/)
+    const m = e.msg.match(/^#ngl查看账号配置\s+(\S+)\s+(\d+)/)
     if (!m) { this.reply('用法: #ngl查看账号配置 服务器名 QQ'); return true }
     try {
       const client = await pool.get(m[1])
@@ -124,7 +124,7 @@ export class NapcatConfig extends plugin {
 
   async viewWebUI(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl查看WebUI\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl查看WebUI\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl查看WebUI 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -139,7 +139,7 @@ export class NapcatConfig extends plugin {
 
   async editWebUI(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl修改WebUI\s+(\S+)\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl修改WebUI\s+(\S+)\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl修改WebUI 服务器名 key value'); return true }
     const [, serverName, key, value] = m
     if (['token','totpSecret'].includes(key)) { this.reply(`${key} 为敏感字段，请手动编辑`); return true }
@@ -157,7 +157,7 @@ export class NapcatConfig extends plugin {
 
   async editAccountConfig(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl修改账号配置\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl修改账号配置\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl修改账号配置 服务器名 QQ key value'); return true }
     const [, serverName, qq, key, value] = m
     try {
@@ -173,7 +173,7 @@ export class NapcatConfig extends plugin {
 
   async viewOB11Config(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl查看OB11\s+(\S+)\s+(\d+)$/)
+    const m = e.msg.match(/^#ngl查看OB11\s+(\S+)\s+(\d+)/)
     if (!m) { this.reply('用法: #ngl查看OB11 服务器名 QQ'); return true }
     try {
       const client = await pool.get(m[1])
@@ -184,7 +184,7 @@ export class NapcatConfig extends plugin {
   }
   async editOB11Config(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl修改OB11\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl修改OB11\s+(\S+)\s+(\d+)\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl修改OB11 服务器名 QQ key value'); return true }
     const [, serverName, qq, key, value] = m
     try {
@@ -200,7 +200,7 @@ export class NapcatConfig extends plugin {
 
   async listConfigFiles(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl配置文件列表\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl配置文件列表\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl配置文件列表 服务器名'); return true }
     try {
       const client = await pool.get(m[1])
@@ -216,7 +216,7 @@ export class NapcatConfig extends plugin {
 
   async showConfigDir(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl配置目录\s+(\S+)$/)
+    const m = e.msg.match(/^#ngl配置目录\s+(\S+)/)
     if (!m) { this.reply('用法: #ngl配置目录 服务器名'); return true }
     try {
       const client = await pool.get(m[1])

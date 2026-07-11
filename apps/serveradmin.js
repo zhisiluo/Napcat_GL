@@ -14,9 +14,9 @@ export class ServerAdmin extends plugin {
       rule: [
         { reg: '^#ngl服务器列表$', fnc: 'listServers', permission: 'master' },
         { reg: '^#ngl添加服务器\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+', fnc: 'addServer', permission: 'master' },
-        { reg: '^#ngl删除服务器\\s+(\\S+)$', fnc: 'deleteServer', permission: 'master' },
-        { reg: '^#ngl测试\\s+(\\S+)$', fnc: 'testServer', permission: 'master' },
-        { reg: '^#ngl修改服务器\\s+(\\S+)\\s+(\\S+)\\s+(.+)$', fnc: 'editServer', permission: 'master' },
+        { reg: '^#ngl删除服务器\\s+(\\S+)', fnc: 'deleteServer', permission: 'master' },
+        { reg: '^#ngl测试\\s+(\\S+)', fnc: 'testServer', permission: 'master' },
+        { reg: '^#ngl修改服务器\\s+(\\S+)\\s+(\\S+)\\s+(.+)', fnc: 'editServer', permission: 'master' },
       ]
     })
   }
@@ -65,7 +65,7 @@ export class ServerAdmin extends plugin {
 
   async deleteServer(e) {
     if (!e.isMaster) return true
-    const name = (e.msg.match(/^#ngl删除服务器\s+(\S+)$/) || [])[1]
+    const name = (e.msg.match(/^#ngl删除服务器\s+(\S+)/) || [])[1]
     if (!pool.hasServer(name)) { this.reply(`服务器 ${name} 不存在`); return true }
     try {
       const r = await pool.remove(name)
@@ -99,7 +99,7 @@ export class ServerAdmin extends plugin {
 
   async editServer(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl修改服务器\s+(\S+)\s+(\S+)\s+(.+)$/)
+    const m = e.msg.match(/^#ngl修改服务器\s+(\S+)\s+(\S+)\s+(.+)/)
     if (!m) { this.reply('用法: #ngl修改服务器 名称 key value'); return true }
     const [, name, key, value] = m
     if (!pool.hasServer(name)) { this.reply(`服务器 ${name} 不存在`); return true }
