@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -206,7 +207,7 @@ class SSHClient {
       }
       logger.warn(`[ngl] WebUI API QQ ${qq} 返回异常: ${JSON.stringify(apiR)}`)
     } catch (err) {
-      logger.warn(`[ngl] WebUI API QQ ${qq} 调用失败: ${err.message}`)
+      if (typeof logger !== 'undefined') logger.warn(`[ngl] WebUI API QQ ${qq} 调用失败: ${err.message}`)
     }
     const running = await this.isNapCatRunning(qq)
     if (!running.running) return { status: 'offline' }
@@ -648,10 +649,27 @@ class SSHClient {
 
   clearWebUIToken() { this.webuiToken = null }
 
-  async webuiApiCall(method, apiPath, data = null) {
+  async _webuiLogin() {
+    if (this._webuiCredential) return this._webuiCredential
     const token = await this.getWebUIToken()
+    if (!token) return null
     const webuiPort = this.config.webuiPort || 6099
-    const authHeader = token ? `-H "Authorization: Bearer ${token}"` : ''
+    const hash = crypto.createHash('sha256').update(token + '.napcat').digest('hex')
+    const b64 = Buffer.from(JSON.stringify({ hash })).toString('base64')
+    const r = await this.executeCommand(
+      `echo '${b64}' | base64 -d | curl -s -X POST 'http://127.0.0.1:${webuiPort}/api/auth/login' -H 'Content-Type: application/json' -d @-`
+    )
+    try {
+      const j = JSON.parse(r.stdout || '{}')
+      if (j.data?.Credential) { this._webuiCredential = j.data.Credential; return j.data.Credential }
+    } catch {}
+    return null
+  }
+
+  async webuiApiCall(method, apiPath, data = null) {
+    const credential = await this._webuiLogin()
+    const webuiPort = this.config.webuiPort || 6099
+    const authHeader = credential ? `-H "Authorization: Bearer ${credential}"` : ''
     const baseUrl = `http://127.0.0.1:${webuiPort}`
 
     let curlCmd
