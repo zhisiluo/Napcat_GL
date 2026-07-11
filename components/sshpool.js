@@ -194,25 +194,19 @@ class SSHClient {
 
   async checkLoginStatus(qq) {
     assertQQ(qq)
-    // 1. 通过 WebUI API 检测 (最可靠)
     try {
       const apiR = await this.webuiApiPost('/api/QQLogin/CheckLoginStatus')
       if (apiR.success && apiR.data) {
         const d = apiR.data.data || apiR.data
+        logger.info(`[ngl] WebUI API QQ ${qq}: isLogin=${d.isLogin} isOffline=${d.isOffline} qrcodeurl=${!!d.qrcodeurl}`)
         if (d.isLogin === true) return { status: 'online' }
         if (d.isOffline === true) return { status: 'offline', message: d.loginError || 'QQ已离线' }
         if (d.qrcodeurl) return { status: 'waiting_qr' }
         return { status: 'waiting_qr' }
       }
-    } catch {}
-    // 2. 回退: 进程存活时间判断
-    const proc = await this.executeCommand(
-      `ps -o etimes= -p $(ps aux | grep -v grep | grep -E "napcat|qq.*-q ${qq}|xvfb.*-q ${qq}" | awk '{print $2}' | head -1) 2>/dev/null || echo "0"`
-    )
-    if (proc.success) {
-      const seconds = parseInt(proc.stdout.trim()) || 0
-      if (seconds > 300) return { status: 'online' }
-      if (seconds > 0)   return { status: 'waiting_qr' }
+      logger.warn(`[ngl] WebUI API QQ ${qq} 返回异常: ${JSON.stringify(apiR)}`)
+    } catch (err) {
+      logger.warn(`[ngl] WebUI API QQ ${qq} 调用失败: ${err.message}`)
     }
     const running = await this.isNapCatRunning(qq)
     if (!running.running) return { status: 'offline' }
