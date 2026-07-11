@@ -65,7 +65,7 @@ export class NapcatInstall extends plugin {
         `${server} NapCat 安装完成!`,
         `系统: ${osName}`,
         `路径: ${detectedPath || client.napcatBasePath}`,
-        `WebUI: http://${info.host}:6099/webui`,
+        `WebUI: http://${info.host}:${await client.getWebUIPort()}/webui`,
         `下一步: #ngl快速部署 ${server} QQ号`,
       ].join('\n'))
 

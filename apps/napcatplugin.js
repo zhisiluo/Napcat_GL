@@ -107,7 +107,7 @@ export class NapcatPlugin extends plugin {
       const client = await pool.get(serverName)
       const info   = client.getConnectionInfo()
       const wCfg = await client.readWebUIConfig()
-      const port  = wCfg.success ? (wCfg.data?.port || 6099) : 6099
+      const port  = await client.getWebUIPort()
       const token = wCfg.success ? wCfg.data?.token : null
       if (keyOnly) {
         this.reply(token ? `${serverName} WebUI Token:\n${token}` : `${serverName} WebUI Token 未配置`)

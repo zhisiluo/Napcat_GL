@@ -653,7 +653,7 @@ class SSHClient {
     if (this._webuiCredential) return this._webuiCredential
     const token = await this.getWebUIToken()
     if (!token) return null
-    const webuiPort = this.config.webuiPort || 6099
+    const webuiPort = await this.getWebUIPort()
     const hash = crypto.createHash('sha256').update(token + '.napcat').digest('hex')
     const b64 = Buffer.from(JSON.stringify({ hash })).toString('base64')
     const r = await this.executeCommand(
@@ -668,7 +668,7 @@ class SSHClient {
 
   async webuiApiCall(method, apiPath, data = null) {
     const credential = await this._webuiLogin()
-    const webuiPort = this.config.webuiPort || 6099
+    const webuiPort = await this.getWebUIPort()
     const authHeader = credential ? `-H "Authorization: Bearer ${credential}"` : ''
     const baseUrl = `http://127.0.0.1:${webuiPort}`
 
