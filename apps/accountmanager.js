@@ -18,22 +18,23 @@ export class AccountManager extends plugin {
       event: 'message',
       priority: 5000,
       rule: [
-        { reg: '^#ngl快速部署\\s+(\\S+)\\s+(\\d+)$', fnc: 'quickDeploy',   permission: 'master' },
-        { reg: '^#ngl创建账号\\s+(\\S+)\\s+(\\d+)$', fnc: 'createAccount', permission: 'master' },
-        { reg: '^#ngl重新扫码\\s+(\\S+)\\s+(\\d+)$', fnc: 'reQRCode',      permission: 'master' },
+        { reg: '^#ngl快速部署\\s+(\\S+)\\s+(\\d+)', fnc: 'quickDeploy',   permission: 'master' },
+        { reg: '^#ngl创建账号\\s+(\\S+)\\s+(\\d+)', fnc: 'createAccount', permission: 'master' },
+        { reg: '^#ngl重新扫码\\s+(\\S+)\\s+(\\d+)', fnc: 'reQRCode',      permission: 'master' },
       ]
     })
   }
 
   async quickDeploy(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl快速部署\s+(\S+)\s+(\d+)$/)
+    const m = e.msg.match(/^#ngl快速部署\s+(\S+)\s+(\d+)/)
     if (!m) { this.reply('用法: #ngl快速部署 服务器名 QQ'); return true }
-    const [, serverName] = m
+    const [, serverName, qq] = m
     try {
       const client = await pool.get(serverName)
       const installed = await this._ensureInstalled(e, client, serverName)
       if (!installed) return true
+      e.msg = `#ngl创建账号 ${serverName} ${qq}`
       return this.createAccount(e)
     } catch (err) { this.reply(formatError(err)) }
     return true
@@ -41,7 +42,7 @@ export class AccountManager extends plugin {
 
   async createAccount(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl创建账号\s+(\S+)\s+(\d+)$/)
+    const m = e.msg.match(/^#ngl创建账号\s+(\S+)\s+(\d+)/)
     if (!m) { this.reply('用法: #ngl创建账号 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
@@ -57,7 +58,7 @@ export class AccountManager extends plugin {
 
   async reQRCode(e) {
     if (!e.isMaster) return true
-    const m = e.msg.match(/^#ngl重新扫码\s+(\S+)\s+(\d+)$/)
+    const m = e.msg.match(/^#ngl重新扫码\s+(\S+)\s+(\d+)/)
     if (!m) { this.reply('用法: #ngl重新扫码 服务器名 QQ'); return true }
     const [, serverName, qq] = m
     try {
@@ -220,7 +221,7 @@ export class AccountManager extends plugin {
               if (qrR.success) {
                 const buf = fs.readFileSync(tmpFile)
                 this.reply(segment.image(buf))
-                this.reply(`QQ ${qq} 二维码已刷新，请重新扫码（3分钟内有效）`)
+                this.reply(`QQ ${qq} 二维码已过期\n请重新获取: #ngl重新扫码 ${serverName} ${qq}`)
               }
             } finally {
               cleanTempFile(tmpFile)
