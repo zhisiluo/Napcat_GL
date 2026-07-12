@@ -27,7 +27,7 @@ cd plugins/Napcat_GL-plugin && pnpm install
 
 **国内加速（访问 GitHub 慢时使用）：**
 ```bash
-git clone https://gh.llkk.cc/https://github.com/zhisiluo/Napcat_GL.git ./plugins/Napcat_GL-plugin/
+git clone https://gh-proxy.com/https://github.com/zhisiluo/Napcat_GL.git ./plugins/Napcat_GL-plugin/
 cd plugins/Napcat_GL-plugin && pnpm install
 ```
 
