@@ -7,7 +7,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 
-const POLL_INTERVAL = 8000
 const LOGIN_TIMEOUT = 3 * 60 * 1000
 
 export class AccountManager extends plugin {
@@ -194,18 +193,7 @@ export class AccountManager extends plugin {
   }
 
   async _monitorLogin(e, client, qq, serverName) {
-    const reply = msg => { try { e.reply(msg) } catch {} }
-    const maxPolls = Math.floor(LOGIN_TIMEOUT / POLL_INTERVAL)
-
-    for (let i = 0; i < maxPolls; i++) {
-      if (i > 0) await sleep(POLL_INTERVAL)
-      const running = await client.isNapCatRunning(qq).catch(() => ({ running: false }))
-      if (!running.running) {
-        reply(`QQ ${qq} 进程已退出\n请尝试重新启动: #ngl启动 ${serverName} ${qq}`)
-        return
-      }
-    }
-
-    reply(`QQ ${qq} 扫码超时（3分钟），请发:\n#ngl重新扫码 ${serverName} ${qq}`)
+    await sleep(LOGIN_TIMEOUT)
+    try { e.reply(`QQ ${qq} 扫码超时（3分钟），若未登录成功请发:\n#ngl重新扫码 ${serverName} ${qq}`) } catch {}
   }
 }

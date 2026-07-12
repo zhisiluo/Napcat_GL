@@ -182,7 +182,9 @@ class SSHClient {
 
   stopLogStream() {
     if (this.currentLogStream) {
-      this.currentLogStream.write('\x03')
+      const stream = this.currentLogStream
+      this.currentLogStream = null
+      try { stream.destroy() } catch {}
       return true
     }
     return false
@@ -232,8 +234,10 @@ class SSHClient {
     const mode = await this.detectProcessMode()
     if (mode === 'wrapper') return this.napcatStart(qq)
     if (mode === 'docker')  return this.executeCommand(`docker start napcat_${qq}`)
-    if (mode === 'screen')  return this.executeCommand(`screen -dmS napcat_${qq} bash -c "xvfb-run -a qq --no-sandbox -q ${qq}"`)
-    return this.executeCommand(`nohup xvfb-run -a qq --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
+    const xvfbCheck = await this.executeCommand('which xvfb-run >/dev/null 2>&1 && echo YES || echo NO')
+    const qqCmd = xvfbCheck.stdout?.trim() === 'YES' ? 'xvfb-run -a qq' : 'qq'
+    if (mode === 'screen')  return this.executeCommand(`screen -dmS napcat_${qq} bash -c "${qqCmd} --no-sandbox -q ${qq}"`)
+    return this.executeCommand(`nohup ${qqCmd} --no-sandbox -q ${qq} > /dev/null 2>&1 &`, 10000)
   }
 
   async stopInstance(qq) {
@@ -635,7 +639,11 @@ class SSHClient {
   clearWebUIToken() { this.webuiToken = null }
 
   async _webuiLogin() {
-    if (this._webuiCredential) return this._webuiCredential
+    const now = Date.now()
+    if (this._webuiCredential && now - (this._webuiCredentialAt || 0) < 5 * 60 * 1000) {
+      return this._webuiCredential
+    }
+    this._webuiCredential = null
     const token = await this.getWebUIToken()
     if (!token) return null
     const webuiPort = await this.getWebUIPort()
@@ -646,7 +654,11 @@ class SSHClient {
     )
     try {
       const j = JSON.parse(r.stdout || '{}')
-      if (j.data?.Credential) { this._webuiCredential = j.data.Credential; return j.data.Credential }
+      if (j.data?.Credential) {
+        this._webuiCredential = j.data.Credential
+        this._webuiCredentialAt = Date.now()
+        return j.data.Credential
+      }
     } catch {}
     return null
   }
@@ -688,8 +700,9 @@ class SSHClient {
     const timestamp = backupName || new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').substring(0, 19)
     const backupFileName = `napcat_config_backup_${timestamp}.tar.gz`
     const backupDir = `${this.napcatConfigDir}/../backups`
+    const configName = this.napcatConfigDir.split('/').filter(Boolean).pop() || 'config'
 
-    const script = `mkdir -p "${backupDir}" && cd "${this.napcatConfigDir}/.." && tar -czf "${backupDir}/${backupFileName}" config/ 2>&1 && echo "BACKUP_OK:${backupFileName}" || echo "BACKUP_FAIL"`
+    const script = `mkdir -p "${backupDir}" && tar -czf "${backupDir}/${backupFileName}" -C "${this.napcatConfigDir}/.." "${configName}" 2>&1 && echo "BACKUP_OK:${backupFileName}" || echo "BACKUP_FAIL"`
     const result = await this.executeCommand(script)
     if (result.success && result.stdout.includes('BACKUP_OK')) {
       return { success: true, backupFile: backupFileName, backupPath: `${backupDir}/${backupFileName}` }
@@ -712,8 +725,9 @@ class SSHClient {
 
     const exists = await this.pathExists(backupPath)
     if (!exists) return { success: false, message: `备份文件不存在: ${backupFileName}` }
+    const configName = this.napcatConfigDir.split('/').filter(Boolean).pop() || 'config'
 
-    const script = `cd "${this.napcatConfigDir}/.." && cp -r config/ "config_backup_before_restore_$(date +%s)/" 2>/dev/null; cd "${this.napcatConfigDir}/.." && tar -xzf "${backupPath}" 2>&1 && echo "RESTORE_OK" || echo "RESTORE_FAIL"`
+    const script = `cd "${this.napcatConfigDir}/.." && cp -r "${configName}/" "${configName}_backup_before_restore_$(date +%s)/" 2>/dev/null; tar -xzf "${backupPath}" -C "${this.napcatConfigDir}/.." 2>&1 && echo "RESTORE_OK" || echo "RESTORE_FAIL"`
     const result = await this.executeCommand(script)
     if (result.success && result.stdout.includes('RESTORE_OK')) {
       return { success: true, message: '配置已恢复，原配置已自动备份' }

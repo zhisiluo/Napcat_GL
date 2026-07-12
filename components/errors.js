@@ -5,6 +5,7 @@ export function formatError(err) {
 }
 
 export function parseNapcatError(r, qq = '', server = '') {
+  if (!r) return '启动失败：未知错误'
   const raw = (r.stdout || r.stderr || r.message || '').trim()
   if (/禁止多开|already running|多开/.test(raw)) {
     const pidMatch = raw.match(/PID:\s*(\d+),\s*QQ:\s*(\d+)/)

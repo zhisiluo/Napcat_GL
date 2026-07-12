@@ -28,44 +28,49 @@ export class ConfigSync extends plugin {
     if (src === dst) { this.reply('源服务器和目标服务器不能相同'); return true }
 
     let localPath = ''
+    let srcClient = null, dstClient = null
+    let srcTmpPath = '', dstTmpPath = ''
     try {
       this.reply(`正在从 ${src} 同步配置到 ${dst}...`)
 
-      const [srcClient, dstClient] = await Promise.all([pool.get(src), pool.get(dst)])
-      const tarName     = `napcat_sync_${Date.now()}.tar.gz`
-      const srcTmpPath  = `/tmp/${tarName}`
-      const tarResult   = await srcClient.executeCommand(
-        `cd "${srcClient.napcatConfigDir}/.." && tar -czf "${srcTmpPath}" config/ 2>&1 && echo "TAR_OK" || echo "TAR_FAIL"`
+      ;[srcClient, dstClient] = await Promise.all([pool.get(src), pool.get(dst)])
+      const tarName = `napcat_sync_${Date.now()}.tar.gz`
+      srcTmpPath = `/tmp/${tarName}`
+      const srcConfigName = srcClient.napcatConfigDir.split('/').filter(Boolean).pop() || 'config'
+      const tarResult = await srcClient.executeCommand(
+        `tar -czf "${srcTmpPath}" -C "${srcClient.napcatConfigDir}/.." "${srcConfigName}" 2>&1 && echo "TAR_OK" || echo "TAR_FAIL"`
       )
       if (!tarResult.stdout?.includes('TAR_OK')) {
         this.reply(`打包源配置失败: ${tarResult.stderr || tarResult.stdout}`)
+        await srcClient.deletePath(srcTmpPath); srcTmpPath = ''
         return true
       }
       localPath = path.join(os.tmpdir(), tarName)
       const dl = await srcClient.downloadFile(srcTmpPath, localPath)
       if (!dl.success) {
         this.reply(`下载配置失败: ${dl.message}`)
-        await srcClient.deletePath(srcTmpPath)
+        await srcClient.deletePath(srcTmpPath); srcTmpPath = ''
         return true
       }
-      const dstTmpPath = `/tmp/${tarName}`
+      dstTmpPath = `/tmp/${tarName}`
       const ul = await dstClient.uploadFile(localPath, dstTmpPath)
       if (!ul.success) {
         this.reply(`上传配置到目标失败: ${ul.message}`)
-        fs.unlinkSync(localPath)
-        await srcClient.deletePath(srcTmpPath)
+        fs.unlinkSync(localPath); localPath = ''
+        await srcClient.deletePath(srcTmpPath); srcTmpPath = ''
         return true
       }
+      const dstConfigName = dstClient.napcatConfigDir.split('/').filter(Boolean).pop() || 'config'
       const restore = await dstClient.executeCommand(
-        `cd "${dstClient.napcatConfigDir}/.." && cp -r config/ "config_backup_before_sync_$(date +%s)" 2>/dev/null; ` +
-        `tar -xzf "${dstTmpPath}" 2>&1 && echo "RESTORE_OK" || echo "RESTORE_FAIL"`,
+        `cd "${dstClient.napcatConfigDir}/.." && cp -r "${dstConfigName}/" "${dstConfigName}_backup_before_sync_$(date +%s)" 2>/dev/null; ` +
+        `tar -xzf "${dstTmpPath}" -C "${dstClient.napcatConfigDir}/.." 2>&1 && echo "RESTORE_OK" || echo "RESTORE_FAIL"`,
         30000
       )
       if (!restore.stdout?.includes('RESTORE_OK')) {
         this.reply(`恢复配置失败: ${restore.stderr || restore.stdout}\n目标服务器原配置已自动备份`)
-        fs.unlinkSync(localPath)
-        await srcClient.deletePath(srcTmpPath)
-        await dstClient.deletePath(dstTmpPath)
+        fs.unlinkSync(localPath); localPath = ''
+        await srcClient.deletePath(srcTmpPath); srcTmpPath = ''
+        await dstClient.deletePath(dstTmpPath); dstTmpPath = ''
         return true
       }
       let mode = 'unknown'
@@ -73,9 +78,9 @@ export class ConfigSync extends plugin {
         mode = await dstClient.detectProcessMode()
         if (mode === 'wrapper') await dstClient.executeCommand('napcat restart 2>&1 || true', 30000)
       } catch (err) { logger.warn(`[ngl] 同步后重启失败: ${err.message}`) }
-      cleanTempFile(localPath)
-      await srcClient.deletePath(srcTmpPath)
-      await dstClient.deletePath(dstTmpPath)
+      cleanTempFile(localPath); localPath = ''
+      await srcClient.deletePath(srcTmpPath); srcTmpPath = ''
+      await dstClient.deletePath(dstTmpPath); dstTmpPath = ''
 
       const restartMsg = mode === 'wrapper' ? '目标 NapCat 已尝试重启' : `目标 NapCat 未自动重启 (模式: ${mode})，请手动重启`
       this.reply([
@@ -87,6 +92,8 @@ export class ConfigSync extends plugin {
 
     } catch (err) {
       if (localPath) cleanTempFile(localPath)
+      if (srcClient && srcTmpPath) await srcClient.deletePath(srcTmpPath).catch(() => {})
+      if (dstClient && dstTmpPath) await dstClient.deletePath(dstTmpPath).catch(() => {})
       this.reply(formatError(err))
     }
     return true

@@ -47,15 +47,16 @@ export class NapcatInstall extends plugin {
         `curl -fsSL ${INSTALL_URL} -o /tmp/napcat_install.sh && bash /tmp/napcat_install.sh 2>&1`,
         300000
       )
+      const detectedPath = await client.detectNapCatPath()
+      const basePath = detectedPath || client.napcatBasePath
       const verify = await client.executeCommand(
-        `test -d "${client.napcatBasePath}/config" && echo "INSTALL_OK" || echo "INSTALL_FAIL"`
+        `(test -d "${basePath}" || command -v napcat >/dev/null 2>&1) && echo "INSTALL_OK" || echo "INSTALL_FAIL"`
       )
       if (verify.stdout?.trim() !== 'INSTALL_OK') {
         const lines = filterInstallOutput(installResult.stdout || installResult.stderr || '')
         this.reply(`安装失败:\n${lines || '未知错误'}`)
         return true
       }
-      const detectedPath = await client.detectNapCatPath()
       if (detectedPath) {
         try { await pool.updateConfig(server, 'napcatBasePath', detectedPath) } catch (err) { logger.warn(`[ngl] 保存检测路径失败: ${err.message}`) }
       }

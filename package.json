@@ -1,6 +1,6 @@
 {
   "name": "napcat-gl",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "NapCat Global Load-balanced manager - YunzaiBot 多服务器 NapCat 管理插件",
   "type": "module",
   "main": "index.js",
